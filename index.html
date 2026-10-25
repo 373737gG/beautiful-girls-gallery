@@ -185,7 +185,7 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-bottom-width:2px
     <button class="btn" onclick="exportFiltered()">📥 导出筛选</button>
     <button class="btn" onclick="exportJSON()">导出JSON</button>
     <button class="btn" onclick="document.getElementById('importFile').click()">导入JSON</button>
-    <button class="btn" onclick="cleanOrphans()" title="删除磁盘上未被任何角色引用的图片（仅服务器模式）">🧹 清理孤儿图</button>
+    <button class="btn" id="cleanOrphansBtn" onclick="cleanOrphans()" title="删除磁盘上未被任何角色引用的图片（仅服务器模式）">🧹 清理孤儿图</button>
     <button class="btn" onclick="toggleTheme()">🌓 主题</button>
     <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
   </div>
@@ -528,7 +528,7 @@ const DEFAULT_DATA = [
 
 // ===== 状态 =====
 // 版本号：每次HTML更新后改一下，自动清掉浏览器旧数据
-const DATA_VERSION = '20261026-v15';
+const DATA_VERSION = '20261026-v16';
 if(localStorage.getItem('dg_version') !== DATA_VERSION){
   localStorage.removeItem('dg_data');
   localStorage.setItem('dg_version', DATA_VERSION);
@@ -569,6 +569,11 @@ function save(){
 // 服务器模式判定：localhost 和 127.0.0.1 都算
 function isServerMode(){
   return location.protocol === 'http:' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1');
+}
+// 「清理孤儿图」是服务器专属功能：静态网页（GitHub Pages / file://）下隐藏，display:none 不占布局
+if(!isServerMode()){
+  const _cob = document.getElementById('cleanOrphansBtn');
+  if(_cob) _cob.style.display = 'none';
 }
 function saveHistory(){localStorage.setItem('dg_history', JSON.stringify(history.slice(-20)))}
 
