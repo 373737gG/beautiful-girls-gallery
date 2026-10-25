@@ -122,6 +122,11 @@ body.light .card:hover{box-shadow:0 12px 28px rgba(31,35,40,.16)}
 .collage-canvas-wrap canvas{max-width:100%;border-radius:8px;touch-action:none;cursor:grab}
 .collage-adjust-bar{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:10px;flex-wrap:wrap}
 .collage-hint{color:var(--text2);font-size:12px}
+/* 图片保存菜单（电脑右键 / 手机长按） */
+#imgSaveMenu{position:fixed;z-index:650;background:var(--bg2);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-lg);padding:6px;min-width:160px;display:none}
+#imgSaveMenu .ism-item{padding:10px 14px;border-radius:8px;color:var(--text);font-size:14px;cursor:pointer;white-space:nowrap;transition:background .15s}
+#imgSaveMenu .ism-item:active,#imgSaveMenu .ism-item:hover{background:var(--accent-soft)}
+img{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 /* 紧凑列表 */
 .grid.list-view{grid-template-columns:1fr;gap:8px}
 .grid.list-view .card{display:flex;height:auto}
@@ -556,7 +561,7 @@ const DEFAULT_DATA = [
 
 // ===== 状态 =====
 // 版本号：每次HTML更新后改一下，自动清掉浏览器旧数据
-const DATA_VERSION = '20261026-v19';
+const DATA_VERSION = '20261026-v20';
 if(localStorage.getItem('dg_version') !== DATA_VERSION){
   localStorage.removeItem('dg_data');
   localStorage.setItem('dg_version', DATA_VERSION);
@@ -1454,6 +1459,97 @@ function updateHeaderOnScroll(){
   lastScrollY = y;
 }
 window.addEventListener('scroll', updateHeaderOnScroll, {passive:true});
+
+// ===== 图片保存：电脑右键 / 手机长按 → 弹出菜单 → 保存原图 =====
+(function(){
+  const menu = document.createElement('div');
+  menu.id = 'imgSaveMenu';
+  menu.innerHTML = '<div class="ism-item" id="ismSave">💾 保存图片</div>';
+  menu.style.display = 'none';
+  document.body.appendChild(menu);
+  let currentUrl = '', pressTimer = null, pressPoint = null, suppressClick = false;
+
+  function showMenu(x, y, url){
+    currentUrl = url;
+    menu.style.display = 'block';
+    menu.style.left = Math.max(8, Math.min(x, innerWidth - menu.offsetWidth - 8)) + 'px';
+    menu.style.top = Math.max(8, Math.min(y, innerHeight - menu.offsetHeight - 8)) + 'px';
+  }
+  function hideMenu(){ menu.style.display = 'none'; }
+
+  function saveImage(url){
+    const raw = (url.split('?')[0].match(/[^\/]+$/) || [null])[0];
+    let name = '图片_' + Date.now() + '.png';
+    try{ if(raw) name = decodeURIComponent(raw); }catch(_){ if(raw) name = raw; }
+    if(url.startsWith('data:')){
+      const a = document.createElement('a');
+      a.href = url; a.download = name; a.click();
+      toast('已开始下载：' + name);
+      return;
+    }
+    // 原图字节直接下载（不经 canvas 重编码，保持原始清晰度）；跨域失败回退新标签页
+    fetch(url).then(r => { if(!r.ok) throw new Error(r.status); return r.blob(); }).then(b => {
+      const u = URL.createObjectURL(b);
+      const a = document.createElement('a');
+      a.href = u; a.download = name; a.click();
+      setTimeout(() => URL.revokeObjectURL(u), 3000);
+      toast('已开始下载：' + name);
+    }).catch(() => {
+      window.open(url, '_blank');
+      toast('该图无法直接下载，已在新标签页打开，可右键/长按保存');
+    });
+  }
+  window.__saveImage = saveImage;   // 测试钩子
+
+  // 电脑端右键（安卓长按也会触发 contextmenu，一并处理）
+  document.addEventListener('contextmenu', e => {
+    const img = e.target && e.target.closest ? e.target.closest('img') : null;
+    if(!img) return;
+    e.preventDefault();
+    showMenu(e.clientX, e.clientY, img.currentSrc || img.src);
+  }, true);
+
+  // 手机长按：500ms 无移动弹出菜单（iOS 不触发 contextmenu，用计时器兜底）
+  document.addEventListener('touchstart', e => {
+    suppressClick = false;   // 新的按压 = 新意图，重置吞 click 标志
+    const t = e.touches[0];
+    const img = e.target && e.target.closest ? e.target.closest('img') : null;
+    if(!img || !t) return;
+    pressPoint = {x: t.clientX, y: t.clientY};
+    const url = img.currentSrc || img.src;
+    pressTimer = setTimeout(() => {
+      pressTimer = null;
+      showMenu(pressPoint.x, pressPoint.y, url);
+      suppressClick = true;   // 吞掉长按结束后的 click，避免误开卡片/误选图
+      if(navigator.vibrate) navigator.vibrate(30);
+    }, 500);
+  }, {passive: true});
+  document.addEventListener('touchmove', e => {
+    if(!pressTimer || !pressPoint) return;
+    const t = e.touches[0];
+    if(t && (Math.abs(t.clientX - pressPoint.x) > 10 || Math.abs(t.clientY - pressPoint.y) > 10)){
+      clearTimeout(pressTimer); pressTimer = null;
+    }
+  }, {passive: true});
+  document.addEventListener('touchend', e => {
+    if(pressTimer){ clearTimeout(pressTimer); pressTimer = null; }
+    // 长按刚弹出菜单时，阻止抬起手指合成的幽灵 click（防止误点菜单项）
+    if(suppressClick){ e.preventDefault(); suppressClick = false; }
+  }, {passive: false});
+  // 长按后的那次 click 在捕获阶段吞掉（菜单自身的点击永不吞）
+  document.addEventListener('click', e => {
+    const onMenu = e.target && e.target.closest && e.target.closest('#imgSaveMenu');
+    if(suppressClick && !onMenu){ e.stopPropagation(); e.preventDefault(); suppressClick = false; }
+  }, true);
+  // 点菜单外关闭；点菜单项保存
+  document.addEventListener('pointerdown', e => {
+    if(menu.style.display === 'block' && !menu.contains(e.target)) hideMenu();
+  });
+  menu.addEventListener('click', e => {
+    if(e.target.id === 'ismSave' && currentUrl) saveImage(currentUrl);
+    hideMenu();
+  });
+})();
 
 render();
 musicInit();
