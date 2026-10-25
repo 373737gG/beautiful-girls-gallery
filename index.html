@@ -100,8 +100,19 @@ body.light .card:hover{box-shadow:0 12px 28px rgba(31,35,40,.16)}
 .carousel-dots{position:absolute;bottom:70px;left:50%;transform:translateX(-50%);display:flex;gap:6px}
 .carousel-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.3);cursor:pointer;transition:all .2s}
 .carousel-dot.active{background:#fff;transform:scale(1.25)}
-/* 拼图模式 */
-.collage-modal{background:var(--bg2);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-lg);width:95%;max-width:900px;max-height:90vh;overflow-y:auto;padding:24px;position:relative}
+/* 拼图模式：顶栏固定 + 内容区滚动（蔚蓝档案式布局） */
+.collage-modal{background:var(--bg2);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-lg);width:95%;max-width:900px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.collage-topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg2)}
+.collage-topbar .btn{padding:8px 16px;font-size:14px;font-weight:600}
+.collage-topbar-actions{display:flex;gap:8px}
+.collage-body{flex:1;min-height:0;overflow-y:auto;padding:20px 24px 24px}
+@media (max-width:768px){
+  .collage-modal{width:96%;max-height:92vh}
+  .collage-topbar{padding:8px 10px;gap:6px}
+  .collage-topbar .btn{flex:1;padding:10px 6px;font-size:13px}
+  .collage-body{padding:14px 12px 20px}
+}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
 .collage-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;margin:16px 0}
 .collage-item{position:relative;cursor:pointer;border-radius:8px;overflow:hidden;aspect-ratio:1}
 .collage-item img{width:100%;height:100%;object-fit:cover}
@@ -276,22 +287,26 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-bottom-width:2px
 <!-- 拼图模式 -->
 <div class="modal-overlay" id="collageModal" onclick="if(event.target===this)closeModal('collageModal')">
   <div class="collage-modal">
-    <button class="modal-close" onclick="closeModal('collageModal')">×</button>
-    <h3 style="color:var(--text);margin-bottom:8px">💖 选择你最喜欢的美少女</h3>
-    <p style="color:var(--text2);font-size:13px;margin-bottom:16px">点击图片选出你最爱的（最多9张），生成拼图后保存。</p>
-    <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
-      <span style="color:var(--accent);font-size:20px;font-weight:bold" id="collageCount">0</span>
-      <span style="color:var(--text2)">/ 9 已选择</span>
-      <button class="btn btn-sm" onclick="clearCollage()">重置</button>
+    <div class="collage-topbar">
+      <button class="btn" onclick="closeModal('collageModal')">✕ 关闭</button>
+      <div class="collage-topbar-actions">
+        <button class="btn btn-primary" id="collageGenBtn" onclick="genCollage()">🎨 生成预览</button>
+        <button class="btn" id="collageSaveBtn" onclick="saveCollage()">💾 保存图片</button>
+      </div>
     </div>
-    <div id="collageFilter" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)"></div>
-    <div class="collage-grid" id="collageGrid"></div>
-    <div class="collage-canvas-wrap" id="collagePreview" style="display:none">
-      <canvas id="collageCanvas"></canvas>
-    </div>
-    <div class="modal-actions" id="collageActions" style="display:none">
-      <button class="btn btn-primary" onclick="genCollage()">🎨 生成预览</button>
-      <button class="btn" onclick="saveCollage()">💾 保存图片</button>
+    <div class="collage-body">
+      <h3 style="color:var(--text);margin:0 0 8px">💖 选择你最喜欢的美少女</h3>
+      <p style="color:var(--text2);font-size:13px;margin-bottom:16px">点击图片选出你最爱的（最多9张），生成拼图后保存。</p>
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+        <span style="color:var(--accent);font-size:20px;font-weight:bold" id="collageCount">0</span>
+        <span style="color:var(--text2)">/ 9 已选择</span>
+        <button class="btn btn-sm" onclick="clearCollage()">重置</button>
+      </div>
+      <div id="collageFilter" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)"></div>
+      <div class="collage-grid" id="collageGrid"></div>
+      <div class="collage-canvas-wrap" id="collagePreview" style="display:none">
+        <canvas id="collageCanvas"></canvas>
+      </div>
     </div>
   </div>
 </div>
@@ -533,7 +548,7 @@ const DEFAULT_DATA = [
 
 // ===== 状态 =====
 // 版本号：每次HTML更新后改一下，自动清掉浏览器旧数据
-const DATA_VERSION = '20261026-v17';
+const DATA_VERSION = '20261026-v18';
 if(localStorage.getItem('dg_version') !== DATA_VERSION){
   localStorage.removeItem('dg_data');
   localStorage.setItem('dg_version', DATA_VERSION);
@@ -941,7 +956,9 @@ function renderCollageGrid(){
     })
   ).join('');
   document.getElementById('collageCount').textContent=collageSelected.length;
-  document.getElementById('collageActions').style.display=collageSelected.length?'flex':'none';
+  // 顶栏按钮：未选图时置灰，防止空生成/空保存
+  document.getElementById('collageGenBtn').disabled=!collageSelected.length;
+  document.getElementById('collageSaveBtn').disabled=!collageSelected.length;
 }
 function setCollageRace(r){collageRaceFilter=r;renderCollageGrid()}
 function toggleCollageImg(url){
@@ -956,7 +973,7 @@ function toggleCollageImg(url){
 }
 function clearCollage(){collageSelected=[];renderCollageGrid();document.getElementById('collagePreview').style.display='none'}
 function genCollage(){
-  if(!collageSelected.length) return;
+  if(!collageSelected.length){toast('先选几张喜欢的图片再生成拼图');return}
   const n=collageSelected.length;
   const cols=n<=1?1:n<=4?2:3;
   const rows=Math.ceil(n/cols);
@@ -977,17 +994,20 @@ function genCollage(){
       loaded++;
       if(loaded+failed===n){
         document.getElementById('collagePreview').style.display='block';
+        document.getElementById('collagePreview').scrollIntoView({behavior:'smooth',block:'start'});
         if(failed) toast(`完成：${loaded} 张成功，${failed} 张失败（失败图已标红）`);
       }
     };
     img.onerror=function(){failed++; if(loaded+failed===n){
       document.getElementById('collagePreview').style.display='block';
+      document.getElementById('collagePreview').scrollIntoView({behavior:'smooth',block:'start'});
       toast(`完成：${loaded} 张成功，${failed} 张失败（失败图已标红）`);
     }};
     img.src=url;
   });
 }
 function saveCollage(){
+  if(!collageSelected.length || document.getElementById('collagePreview').style.display==='none'){toast('请先生成预览再保存');return}
   const canvas=document.getElementById('collageCanvas');
   try{
     const a=document.createElement('a');
