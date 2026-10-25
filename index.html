@@ -54,6 +54,11 @@ button,input,select,textarea{font-family:inherit}
 .toolbar input{flex:1;min-width:180px}
 .toolbar input:focus,.toolbar select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .toolbar input::placeholder{color:var(--text2)}
+/* 手机端：向下滚动隐藏顶部工具栏，向上滚动显示（规则仅写在窄屏媒体查询里，桌面端不受影响） */
+@media (max-width:768px){
+  .header{transition:transform .3s ease}
+  .header.header-hidden{transform:translateY(-110%)}
+}
 .stats{color:var(--text2);font-size:12px;margin-left:auto}
 .tag-bar{padding:4px 24px 12px;display:flex;gap:6px;flex-wrap:wrap;background:transparent}
 .race-tab{padding:6px 16px;border-radius:999px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;font-size:14px;font-weight:bold;transition:all .15s}
@@ -528,7 +533,7 @@ const DEFAULT_DATA = [
 
 // ===== 状态 =====
 // 版本号：每次HTML更新后改一下，自动清掉浏览器旧数据
-const DATA_VERSION = '20261026-v16';
+const DATA_VERSION = '20261026-v17';
 if(localStorage.getItem('dg_version') !== DATA_VERSION){
   localStorage.removeItem('dg_data');
   localStorage.setItem('dg_version', DATA_VERSION);
@@ -1305,6 +1310,22 @@ document.addEventListener('keydown',e=>{
 });
 
 function closeModal(id){document.getElementById(id).style.display='none'}
+
+// ===== 手机端：向下滚动隐藏顶部工具栏，向上滚动显示 =====
+// 双保险：JS 侧用 matchMedia 判断窄屏，CSS 规则本身也只在窄屏媒体查询里生效
+// 监听器直调（函数为 O(1)，无需 rAF 节流；rAF 在部分内嵌环境会被节流不触发）
+const headerMQ = window.matchMedia('(max-width:768px)');
+let lastScrollY = window.scrollY;
+function updateHeaderOnScroll(){
+  const h = document.querySelector('.header'), y = window.scrollY;
+  if(headerMQ.matches && h){
+    // ±4px 死区防抖动；页面顶部 80px 内常显，避免初始位置奇怪
+    if(y > lastScrollY + 4 && y > 80) h.classList.add('header-hidden');
+    else if(y < lastScrollY - 4 || y <= 80) h.classList.remove('header-hidden');
+  }
+  lastScrollY = y;
+}
+window.addEventListener('scroll', updateHeaderOnScroll, {passive:true});
 
 render();
 musicInit();
