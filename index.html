@@ -119,7 +119,9 @@ body.light .card:hover{box-shadow:0 12px 28px rgba(31,35,40,.16)}
 .collage-item.selected{outline:3px solid var(--accent)}
 .collage-item.selected::after{content:attr(data-num);position:absolute;top:4px;left:4px;background:var(--accent2);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold}
 .collage-canvas-wrap{text-align:center;margin:16px 0}
-.collage-canvas-wrap canvas{max-width:100%;border-radius:8px}
+.collage-canvas-wrap canvas{max-width:100%;border-radius:8px;touch-action:none;cursor:grab}
+.collage-adjust-bar{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:10px;flex-wrap:wrap}
+.collage-hint{color:var(--text2);font-size:12px}
 /* 紧凑列表 */
 .grid.list-view{grid-template-columns:1fr;gap:8px}
 .grid.list-view .card{display:flex;height:auto}
@@ -306,6 +308,12 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-bottom-width:2px
       <div class="collage-grid" id="collageGrid"></div>
       <div class="collage-canvas-wrap" id="collagePreview" style="display:none">
         <canvas id="collageCanvas"></canvas>
+        <div class="collage-adjust-bar">
+          <button class="btn btn-sm" onclick="collageZoom(0.9)">🔍 缩小</button>
+          <button class="btn btn-sm" onclick="collageZoom(1.1)">🔍 放大</button>
+          <button class="btn btn-sm" onclick="collageResetCell()">↺ 重置此图</button>
+          <span class="collage-hint">点选图片后：拖动调位置 · 滚轮或按钮缩放</span>
+        </div>
       </div>
     </div>
   </div>
@@ -548,7 +556,7 @@ const DEFAULT_DATA = [
 
 // ===== 状态 =====
 // 版本号：每次HTML更新后改一下，自动清掉浏览器旧数据
-const DATA_VERSION = '20261026-v18';
+const DATA_VERSION = '20261026-v19';
 if(localStorage.getItem('dg_version') !== DATA_VERSION){
   localStorage.removeItem('dg_data');
   localStorage.setItem('dg_version', DATA_VERSION);
@@ -972,40 +980,140 @@ function toggleCollageImg(url){
   document.getElementById('collagePreview').style.display='none';
 }
 function clearCollage(){collageSelected=[];renderCollageGrid();document.getElementById('collagePreview').style.display='none'}
+// ===== 拼图画布：自动适配 + 手动微调 =====
+// 自动：每格固定 400×400，cover 模式填满（竖图/横图自动居中裁剪），整齐无留白
+// 手动：拖动平移裁剪位置、滚轮/按钮缩放，调整状态按图片 URL 记忆（重新生成不丢失）
+const collageImgs = {};            // url -> 已加载的 Image 缓存
+const collageAdjust = {};          // url -> {zoom, dx, dy} 手动微调
+let collageActiveCell = -1;        // 当前选中的格子（蓝框标记）
+function collageGridInfo(){
+  const n = collageSelected.length;
+  const cols = n<=1?1:n<=4?2:3;
+  return {n, cols, rows: Math.ceil(n/cols), cell: 400};
+}
+function renderCollageCanvas(){
+  const {n, cols, rows, cell} = collageGridInfo();
+  if(!n) return;
+  const canvas = document.getElementById('collageCanvas');
+  canvas.width = cols*cell;
+  canvas.height = rows*cell;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  collageSelected.forEach((url, i) => {
+    const img = collageImgs[url];
+    const adj = collageAdjust[url] || (collageAdjust[url] = {zoom:1, dx:0, dy:0});
+    const x0 = (i%cols)*cell, y0 = Math.floor(i/cols)*cell;
+    if(img && img.width){
+      const base = Math.max(cell/img.width, cell/img.height) * adj.zoom;
+      const w = img.width*base, h = img.height*base;
+      const maxX = (w-cell)/2, maxY = (h-cell)/2;
+      adj.dx = Math.max(-maxX, Math.min(maxX, adj.dx));
+      adj.dy = Math.max(-maxY, Math.min(maxY, adj.dy));
+      ctx.save();
+      ctx.beginPath(); ctx.rect(x0, y0, cell, cell); ctx.clip();
+      ctx.drawImage(img, x0+(cell-w)/2+adj.dx, y0+(cell-h)/2+adj.dy, w, h);
+      ctx.restore();
+    }
+  });
+  if(collageActiveCell >= 0 && collageActiveCell < n){
+    ctx.save();
+    ctx.strokeStyle = '#58a6ff'; ctx.lineWidth = 6;
+    ctx.strokeRect((collageActiveCell%cols)*cell+3, Math.floor(collageActiveCell/cols)*cell+3, cell-6, cell-6);
+    ctx.restore();
+  }
+}
 function genCollage(){
   if(!collageSelected.length){toast('先选几张喜欢的图片再生成拼图');return}
-  const n=collageSelected.length;
-  const cols=n<=1?1:n<=4?2:3;
-  const rows=Math.ceil(n/cols);
-  const cell=400;
-  const canvas=document.getElementById('collageCanvas');
-  canvas.width=cols*cell; canvas.height=rows*cell;
-  const ctx=canvas.getContext('2d');
-  ctx.fillStyle='#1a1a2e'; ctx.fillRect(0,0,canvas.width,canvas.height);
-  let loaded=0, failed=0;
+  const {cols, rows, cell} = collageGridInfo();
+  const canvas = document.getElementById('collageCanvas');
+  canvas.width = cols*cell; canvas.height = rows*cell;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#1a1a2e'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  let loaded = 0, failed = 0;
+  const n = collageSelected.length;
   toast(`正在加载 ${n} 张图...`);
-  collageSelected.forEach((url,i)=>{
-    const img=new Image();
-    img.onload=function(){
-      const x=(i%cols)*cell, y=Math.floor(i/cols)*cell;
-      const scale=Math.max(cell/img.width, cell/img.height);
-      const w=img.width*scale, h=img.height*scale;
-      ctx.drawImage(img, x+(cell-w)/2, y+(cell-h)/2, w, h);
-      loaded++;
-      if(loaded+failed===n){
-        document.getElementById('collagePreview').style.display='block';
-        document.getElementById('collagePreview').scrollIntoView({behavior:'smooth',block:'start'});
-        if(failed) toast(`完成：${loaded} 张成功，${failed} 张失败（失败图已标红）`);
-      }
-    };
-    img.onerror=function(){failed++; if(loaded+failed===n){
-      document.getElementById('collagePreview').style.display='block';
-      document.getElementById('collagePreview').scrollIntoView({behavior:'smooth',block:'start'});
-      toast(`完成：${loaded} 张成功，${failed} 张失败（失败图已标红）`);
-    }};
-    img.src=url;
+  const done = () => {
+    if(loaded + failed !== n) return;
+    collageActiveCell = -1;
+    renderCollageCanvas();
+    document.getElementById('collagePreview').style.display = 'block';
+    document.getElementById('collagePreview').scrollIntoView({behavior:'smooth', block:'start'});
+    if(failed) toast(`完成：${loaded} 张成功，${failed} 张失败（失败图已标红）`);
+  };
+  collageSelected.forEach(url => {
+    const cached = collageImgs[url];
+    if(cached && cached.width){ loaded++; done(); return; }
+    const img = new Image();
+    img.onload = function(){ collageImgs[url] = img; loaded++; done(); };
+    img.onerror = function(){ failed++; done(); };
+    img.src = url;
   });
 }
+// 画布交互：点击选中格子（蓝框），拖动平移，滚轮缩放；手机端手指拖动同理
+function collageCellFromEvent(e){
+  const rect = document.getElementById('collageCanvas').getBoundingClientRect();
+  if(!rect.width) return -1;
+  const {n, cols, cell} = collageGridInfo();
+  const s = (cols*cell) / rect.width;
+  const x = (e.clientX - rect.left) * s, y = (e.clientY - rect.top) * s;
+  if(x < 0 || y < 0) return -1;
+  const col = Math.floor(x/cell), row = Math.floor(y/cell);
+  if(col < 0 || col >= cols) return -1;
+  const i = row*cols + col;
+  return (i >= 0 && i < n) ? i : -1;
+}
+function collageAdj(i){
+  const url = collageSelected[i];
+  return collageAdjust[url] || (collageAdjust[url] = {zoom:1, dx:0, dy:0});
+}
+function collageZoom(f){
+  if(collageActiveCell < 0){toast('先点一下要调整的图片');return}
+  const adj = collageAdj(collageActiveCell);
+  adj.zoom = Math.max(1, Math.min(3, adj.zoom*f));
+  renderCollageCanvas();
+}
+function collageResetCell(){
+  if(collageActiveCell < 0){toast('先点一下要调整的图片');return}
+  collageAdjust[collageSelected[collageActiveCell]] = {zoom:1, dx:0, dy:0};
+  renderCollageCanvas();
+}
+(function(){
+  const c = document.getElementById('collageCanvas');
+  let dragCell = -1, dragStart = null;
+  c.style.touchAction = 'none';   // 手机端在画布上拖动不触发页面滚动
+  c.addEventListener('pointerdown', e => {
+    if(!collageSelected.length) return;
+    const i = collageCellFromEvent(e);
+    if(i < 0) return;
+    collageActiveCell = i; dragCell = i;
+    const adj = collageAdj(i);
+    dragStart = {px: e.clientX, py: e.clientY, dx: adj.dx, dy: adj.dy};
+    try{ c.setPointerCapture(e.pointerId); }catch(_){}
+    renderCollageCanvas();
+  });
+  c.addEventListener('pointermove', e => {
+    if(dragCell < 0 || !dragStart) return;
+    const rect = c.getBoundingClientRect();
+    const s = (collageGridInfo().cols*collageGridInfo().cell) / rect.width;
+    const adj = collageAdj(dragCell);
+    adj.dx = dragStart.dx + (e.clientX - dragStart.px)*s;
+    adj.dy = dragStart.dy + (e.clientY - dragStart.py)*s;
+    e.preventDefault();
+    renderCollageCanvas();
+  });
+  const endDrag = () => { dragCell = -1; dragStart = null; };
+  c.addEventListener('pointerup', endDrag);
+  c.addEventListener('pointercancel', endDrag);
+  c.addEventListener('wheel', e => {
+    if(!collageSelected.length) return;
+    const i = collageCellFromEvent(e);
+    if(i < 0) return;
+    e.preventDefault();
+    collageActiveCell = i;
+    collageZoom(e.deltaY < 0 ? 1.1 : 0.9);
+  }, {passive:false});
+})();
 function saveCollage(){
   if(!collageSelected.length || document.getElementById('collagePreview').style.display==='none'){toast('请先生成预览再保存');return}
   const canvas=document.getElementById('collageCanvas');
