@@ -4,7 +4,7 @@ import os
 from collections import Counter
 
 BASE = os.path.dirname(os.path.abspath(__file__))
-HTML = os.path.join(BASE, '美少女图鉴.html')
+HTML = os.path.join(BASE, 'index.html')
 
 with open(HTML, 'r', encoding='utf-8') as f:
     html = f.read()

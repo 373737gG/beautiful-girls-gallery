@@ -4,7 +4,7 @@ import os
 import re
 
 BASE = r"D:\zhumian\工作区\项目归档\美少女图鉴"
-HTML = BASE + r"\美少女图鉴.html"
+HTML = BASE + r"\index.html"
 IMAGES_DIR = BASE + r"\images"
 
 # 读取HTML，提取所有images字段里的图片路径

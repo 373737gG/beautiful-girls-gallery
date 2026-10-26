@@ -5,7 +5,7 @@ import re
 import shutil
 
 BASE = os.path.dirname(os.path.abspath(__file__))
-HTML = os.path.join(BASE, '美少女图鉴.html')
+HTML = os.path.join(BASE, 'index.html')
 IMG_DIR = os.path.join(BASE, 'images')
 
 # 创建龙族文件夹

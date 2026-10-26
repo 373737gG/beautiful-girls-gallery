@@ -3,7 +3,7 @@
 import os
 import re
 
-html_path = r"D:\zhumian\工作区\项目归档\美少女图鉴\美少女图鉴.html"
+html_path = r"D:\zhumian\工作区\项目归档\美少女图鉴\index.html"
 img_dir = r"D:\zhumian\工作区\项目归档\美少女图鉴\images"
 
 with open(html_path, 'r', encoding='utf-8') as f:

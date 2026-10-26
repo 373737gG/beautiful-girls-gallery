@@ -3,7 +3,7 @@
 import json
 
 BASE = r"D:\zhumian\工作区\项目归档\美少女图鉴"
-HTML = BASE + r"\美少女图鉴.html"
+HTML = BASE + r"\index.html"
 JSON_FILE = r"C:\Users\Chong\Downloads\龙娘图鉴_数据 (1).json"
 
 # 读取JSON

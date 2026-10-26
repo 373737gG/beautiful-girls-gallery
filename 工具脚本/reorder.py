@@ -2,7 +2,7 @@
 """调整角色顺序：把吸血鬼号移到阿尔萨斯后面"""
 import re
 
-html_path = r"D:\zhumian\工作区\项目归档\美少女图鉴\美少女图鉴.html"
+html_path = r"D:\zhumian\工作区\项目归档\美少女图鉴\index.html"
 
 with open(html_path, 'r', encoding='utf-8') as f:
     html = f.read()

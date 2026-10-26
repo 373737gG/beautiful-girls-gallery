@@ -23,7 +23,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         # 列出未被数据引用的孤儿图片，供前端「清理孤儿图」按钮使用
         if self.path == '/orphans':
             try:
-                html_path = os.path.join(DIR, '美少女图鉴.html')
+                html_path = os.path.join(DIR, 'index.html')
                 with open(html_path, 'r', encoding='utf-8') as f:
                     text = f.read()
                 referenced = set()
@@ -61,7 +61,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 if not isinstance(data, list):
                     raise ValueError('数据必须是数组')
 
-                html_path = os.path.join(DIR, '美少女图鉴.html')
+                html_path = os.path.join(DIR, 'index.html')
                 with open(html_path, 'r', encoding='utf-8') as f:
                     text = f.read()
 
@@ -241,11 +241,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 if __name__ == '__main__':
     os.chdir(DIR)
     print(f"美少女图鉴服务器启动中...")
-    print(f"打开浏览器访问: http://localhost:{PORT}/美少女图鉴.html")
+    print(f"打开浏览器访问: http://localhost:{PORT}/index.html")
     print(f"按 Ctrl+C 停止")
     # 自动打开浏览器
     import webbrowser
-    webbrowser.open(f'http://localhost:{PORT}/美少女图鉴.html')
+    webbrowser.open(f'http://localhost:{PORT}/index.html')
     with Server(("", PORT), Handler) as httpd:
         try:
             httpd.serve_forever()
