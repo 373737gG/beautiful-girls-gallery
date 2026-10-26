@@ -179,6 +179,11 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-bottom-width:2px
 .carousel-progress{width:220px;height:4px;background:rgba(255,255,255,.18);border-radius:999px;overflow:hidden;margin:0 auto}
 .carousel-progress-bar{height:100%;background:var(--grad);border-radius:999px;transition:width .3s ease}
 .collage-item.collage-fail::before{content:'加载失败';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(248,81,73,.32);color:#fff;font-size:12px;z-index:2}
+/* 分页加载哨兵（占满整行，高度1px不可见） */
+#gridSentinel{grid-column:1/-1;height:1px}
+/* 拼图：角色封面右上角的图片数徽标（蔚蓝档案式） */
+.collage-item .collage-badge{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.62);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);color:#fff;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:600;z-index:2}
+.collage-pickname{color:var(--accent);font-size:15px;font-weight:bold}
 /* 背景音乐播放器 */
 .music-fab{position:fixed;right:18px;bottom:18px;width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:15px;cursor:pointer;z-index:400;box-shadow:var(--shadow-sm);transition:box-shadow .2s;animation:music-float 3.2s ease-in-out infinite;display:flex;align-items:center;justify-content:center}
 .music-fab:hover{box-shadow:var(--shadow-lg)}
@@ -217,6 +222,8 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-bottom-width:2px
 <div class="dash" id="dash"></div>
 
 <div class="race-bar" id="raceBar"></div>
+
+<div class="tag-bar" id="subTypeBar" style="display:none;padding-top:0"></div>
 
 <div class="toolbar">
   <input type="text" id="searchBox" placeholder="搜索：角色名 / 出处 / 标签 / CV / 设定 / 剧情..." oninput="render()" onkeyup="if(event.key==='/')event.preventDefault()">
@@ -303,8 +310,10 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-bottom-width:2px
     </div>
     <div class="collage-body">
       <h3 style="color:var(--text);margin:0 0 8px">💖 选择你最喜欢的美少女</h3>
-      <p style="color:var(--text2);font-size:13px;margin-bottom:16px">点击图片选出你最爱的（最多9张），生成拼图后保存。</p>
+      <p style="color:var(--text2);font-size:13px;margin-bottom:16px">点击角色 → 再挑她的外观（最多9张），生成拼图后保存。</p>
       <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+        <button class="btn btn-sm" id="collageBackBtn" onclick="backCollageChars()" style="display:none">‹ 返回角色</button>
+        <span class="collage-pickname" id="collagePickName" style="display:none"></span>
         <span style="color:var(--accent);font-size:20px;font-weight:bold" id="collageCount">0</span>
         <span style="color:var(--text2)">/ 9 已选择</span>
         <button class="btn btn-sm" onclick="clearCollage()">重置</button>
@@ -561,7 +570,7 @@ const DEFAULT_DATA = [
 
 // ===== 状态 =====
 // 版本号：每次HTML更新后改一下，自动清掉浏览器旧数据
-const DATA_VERSION = '20261026-v22';
+const DATA_VERSION = '20261026-v23';
 if(localStorage.getItem('dg_version') !== DATA_VERSION){
   localStorage.removeItem('dg_data');
   localStorage.setItem('dg_version', DATA_VERSION);
@@ -585,6 +594,19 @@ let collageSelected = []; // 存图片URL数组
 let collageRaceFilter = ''; // 拼图种族筛选
 let tagFilterText = ''; // 标签栏筛选词
 let carouselAllImgs = false; // 轮播是否播放全部图片
+
+// ===== 分页加载（手机端性能优化：首屏16个，滚动到底自动追加） =====
+const PAGE_SIZE = 16;          // 每批渲染数量
+let curFiltered = [];          // 当前筛选结果（loadMore 依据）
+let shownCount = 0;            // 已渲染数量
+let pagLoading = false;        // 防重复触发标志
+let pagerIO = null;            // 哨兵 IntersectionObserver
+// ===== 种族固定顺序与细分标签（任务3：兽耳娘/精灵） =====
+let activeSubType = '';
+const RACE_ORDER = ['龙族','吸血鬼','机娘','魔女','兽耳娘','精灵'];
+const SUBTYPES = {'兽耳娘':['狐娘','猫娘','犬娘','狼娘'],'精灵':['约会大作战']};
+// ===== 拼图两级选择（蔚蓝档案式：先角色封面 → 再选外观） =====
+let collageCharView = null;
 
 function getRace(c){return c.race || '龙族'}
 
@@ -617,7 +639,9 @@ function toast(msg){
 }
 
 // ===== 渲染 =====
-function render(){
+// reset=true 时重置分页（搜索/筛选/切Tab都会触发）；收藏等原地更新不传 reset，保持滚动位置
+function render(reset){
+  if(reset===undefined) reset=true;
   const q = document.getElementById('searchBox').value.toLowerCase();
   const fs = document.getElementById('filterSource').value;
   const ft = document.getElementById('filterType').value;
@@ -626,6 +650,7 @@ function render(){
   let filtered = data.filter(c=>{
     if(starFilter && !c.star) return false;
     if(activeRace && getRace(c)!==activeRace) return false;
+    if(!matchSubType(c)) return false;
     if(activeTag && !(c.tags||[]).includes(activeTag)) return false;
     if(q){
       const hay = (c.name+c.source+c.type+(c.tags||[]).join(',')+c.desc+(c.cv||'')+(c.story||'')).toLowerCase();
@@ -641,6 +666,9 @@ function render(){
   else if(sort==='star') filtered.sort((a,b)=>(b.star?1:0)-(a.star?1:0));
   else filtered.sort((a,b)=>a.id-b.id);
 
+  curFiltered = filtered;
+  if(reset) shownCount = Math.min(PAGE_SIZE, curFiltered.length);
+
   // 筛选选项
   const sources=[...new Set(data.map(c=>c.source))].sort();
   const types=[...new Set(data.map(c=>c.type))].sort();
@@ -649,13 +677,24 @@ function render(){
   document.getElementById('searchBox').value=q;
   document.getElementById('sortBy').value=sort;
 
-  // 种族Tab
-  const races=[...new Set(data.map(c=>getRace(c)))].sort();
+  // 种族Tab（固定顺序 + 数据里实际出现的种族；兽耳娘/精灵常驻显示）
   const raceCounts={};
   data.forEach(c=>{const r=getRace(c);raceCounts[r]=(raceCounts[r]||0)+1});
+  const raceList=[...new Set([...RACE_ORDER,...Object.keys(raceCounts)])];
   document.getElementById('raceBar').innerHTML=
     `<button class="race-tab ${!activeRace?'active':''}" onclick="setRace('')">全部<span class="count">${data.length}</span></button>`+
-    races.map(r=>`<button class="race-tab ${r===activeRace?'active':''}" onclick="setRace('${r}')">${r}<span class="count">${raceCounts[r]}</span></button>`).join('');
+    raceList.map(r=>`<button class="race-tab ${r===activeRace?'active':''}" onclick="setRace('${r}')">${r}<span class="count">${raceCounts[r]||0}</span></button>`).join('');
+
+  // 细分标签行（兽耳娘→狐/猫/犬/狼，精灵→约会大作战；其余种族隐藏该行）
+  const subBar=document.getElementById('subTypeBar');
+  const subs=SUBTYPES[activeRace]||[];
+  if(subs.length){
+    subBar.style.display='flex';
+    subBar.innerHTML=`<span class="tag ${!activeSubType?'active':''}" onclick="setSubType('')">全部</span>`
+      +subs.map(t=>`<span class="tag ${t===activeSubType?'active':''}" onclick="setSubType('${t}')">${t}</span>`).join('');
+  }else{
+    subBar.style.display='none'; subBar.innerHTML='';
+  }
 
   // 标签栏（展开时带筛选输入框，输入时只刷新标签区不重建输入框）
   const allTags=[...new Set(data.flatMap(c=>c.tags||[]))].sort();
@@ -682,31 +721,68 @@ function render(){
      <span>图片 <b>${totalImgs}</b> 张</span>
      <span style="margin-left:auto;color:var(--text2)">提示：<kbd>/</kbd> 搜索 · <kbd>Esc</kbd> 关闭 · <kbd>←</kbd><kbd>→</kbd> 翻图</span>`;
 
-  if(!filtered.length){
-    document.getElementById('grid').innerHTML='<div class="empty">没有找到匹配的角色</div>';return;
+  renderGridPage();
+}
+
+// 细分标签匹配：type 优先，tags 兜底；「约会大作战」按出处/标签匹配
+function matchSubType(c){
+  if(!activeSubType) return true;
+  if(c.type===activeSubType || (c.tags||[]).includes(activeSubType)) return true;
+  if(activeSubType==='约会大作战' && (c.source||'').includes('约会大作战')) return true;
+  return false;
+}
+
+// 单张卡片模板（分页追加时复用）
+function cardHtml(c){
+  const img = c.images && c.images.length>0 ? resolveImg(c.images[0]) : '';
+  const pc = c.images ? c.images.length : 0;
+  const tags = (c.tags||[]).map(t=>`<span class="card-tag">${t}</span>`).join('');
+  const missing = !img || !c.desc;
+  return `<div class="card ${missing?'missing':''}" onclick="openView(${c.id})">
+    <div class="card-img-wrap">
+      ${img?`<img class="card-img" src="${img}" loading="lazy" onerror="imgFail(this)">`:'<div class="img-fallback">无图</div>'}
+      <button class="card-star ${c.star?'on':''}" data-star-id="${c.id}" onclick="event.stopPropagation();toggleStar(${c.id})">${c.star?'★':'☆'}</button>
+      ${pc>1?`<span class="card-pcount">${pc}P</span>`:''}
+    </div>
+    <div class="card-info">
+      <div class="card-name">${c.name}</div>
+      <div class="card-source">${c.source}</div>
+      <span class="card-type">${getRace(c)} · ${c.type}</span>
+      <div class="card-tags">${tags}</div>
+    </div>
+  </div>`;
+}
+
+// 按分页状态渲染卡片网格（已显示的部分 + 底部哨兵）
+function renderGridPage(){
+  const grid=document.getElementById('grid');
+  if(!curFiltered.length){
+    grid.innerHTML='<div class="empty">没有找到匹配的角色</div>';
+    if(pagerIO) pagerIO.disconnect();
+    return;
   }
+  grid.className = listView ? 'grid list-view' : 'grid';
+  grid.innerHTML = curFiltered.slice(0,shownCount).map(cardHtml).join('')
+    + (shownCount<curFiltered.length ? '<div id="gridSentinel"></div>' : '');
+  setupSentinel();
+}
 
-  document.getElementById('grid').className = listView ? 'grid list-view' : 'grid';
-
-  document.getElementById('grid').innerHTML = filtered.map(c=>{
-    const img = c.images && c.images.length>0 ? resolveImg(c.images[0]) : '';
-    const pc = c.images ? c.images.length : 0;
-    const tags = (c.tags||[]).map(t=>`<span class="card-tag">${t}</span>`).join('');
-    const missing = !img || !c.desc;
-    return `<div class="card ${missing?'missing':''}" onclick="openView(${c.id})">
-      <div class="card-img-wrap">
-        ${img?`<img class="card-img" src="${img}" loading="lazy" onerror="imgFail(this)">`:'<div class="img-fallback">无图</div>'}
-        <button class="card-star ${c.star?'on':''}" onclick="event.stopPropagation();toggleStar(${c.id})">${c.star?'★':'☆'}</button>
-        ${pc>1?`<span class="card-pcount">${pc}P</span>`:''}
-      </div>
-      <div class="card-info">
-        <div class="card-name">${c.name}</div>
-        <div class="card-source">${c.source}</div>
-        <span class="card-type">${getRace(c)} · ${c.type}</span>
-        <div class="card-tags">${tags}</div>
-      </div>
-    </div>`;
-  }).join('');
+// 哨兵进入视口（提前600px）→ 追加下一批16个；加载完自动停止
+function setupSentinel(){
+  if(pagerIO) pagerIO.disconnect();
+  const s=document.getElementById('gridSentinel');
+  if(!s) return;
+  pagerIO=new IntersectionObserver(es=>{
+    if(es.some(e=>e.isIntersecting)) loadMore();
+  },{rootMargin:'600px'});
+  pagerIO.observe(s);
+}
+function loadMore(){
+  if(pagLoading || shownCount>=curFiltered.length) return;
+  pagLoading=true;
+  shownCount=Math.min(shownCount+PAGE_SIZE, curFiltered.length);
+  renderGridPage();
+  pagLoading=false;
 }
 
 function resolveImg(p){
@@ -732,11 +808,26 @@ function renderTagList(){
 function toggleTags(){tagsExpanded=!tagsExpanded;render()}
 function toggleHistory(){historyExpanded=!historyExpanded;if(currentViewId)renderView(currentViewId)}
 function setTag(t){activeTag=t;render()}
-function setRace(r){activeRace=r;render()}
+function setRace(r){activeRace=r;activeSubType='';render()}
+function setSubType(t){activeSubType=t;render()}
 function toggleStarFilter(){starFilter=!starFilter;document.getElementById('starFilterBtn').style.background=starFilter?'var(--accent2)':'';document.getElementById('starFilterBtn').style.color=starFilter?'#fff':'';render()}
+// 收藏：原地更新星标（不整页重渲染，避免分页重置跳回顶部）
 function toggleStar(id){
-  const c=data.find(x=>x.id===id); c.star=!c.star; save(); render();
+  const c=data.find(x=>x.id===id); c.star=!c.star; save();
+  document.querySelectorAll(`[data-star-id="${id}"]`).forEach(b=>{
+    b.classList.toggle('on',c.star); b.textContent=c.star?'★':'☆';
+  });
+  if(currentViewId===id) renderView(id);
+  updateStarStats();
   toast(c.star?'已收藏':'已取消收藏');
+}
+// 收藏数变化后只刷新统计文案（dash/countBadge），不动卡片
+function updateStarStats(){
+  const starCount=data.filter(c=>c.star).length;
+  const totalImgs=data.reduce((s,c)=>s+(c.images?c.images.length:0),0);
+  document.getElementById('countBadge').textContent=`${data.length}人 · ${totalImgs}图 · ⭐${starCount}`;
+  const dash=document.getElementById('dash');
+  if(dash) dash.innerHTML=dash.innerHTML.replace(/收藏 <b>\d+<\/b>/,'收藏 <b>'+starCount+'</b>');
 }
 
 // ===== 详情 =====
@@ -941,9 +1032,11 @@ function setCover(id,idx){
 // ===== 拼图导出 =====
 function openCollage(){
   collageSelected=[];
+  collageCharView=null;
   renderCollageGrid();
   document.getElementById('collageModal').style.display='flex';
 }
+// 蔚蓝档案式两级选择：第一级=角色封面（右上角数字=该角色图片数），第二级=该角色的全部外观
 function renderCollageGrid(){
   // 自动提取种族并渲染筛选栏
   const raceSet=new Set();
@@ -954,26 +1047,54 @@ function renderCollageGrid(){
     `<span class="tag ${collageRaceFilter===r?'active':''}" onclick="setCollageRace('${r}')">${raceNames[r]||r}</span>`
   ).join('');
 
-  // 按种族过滤（用getRace函数）
+  const backBtn=document.getElementById('collageBackBtn');
+  const pickName=document.getElementById('collagePickName');
+
+  // 第二级：正在看某角色 → 显示她的全部外观供挑选
+  if(collageCharView!=null){
+    const c=data.find(x=>x.id===collageCharView);
+    if(!c||!c.images||!c.images.length){ collageCharView=null; }
+    else{
+      backBtn.style.display=''; pickName.style.display=''; pickName.textContent=c.name;
+      document.getElementById('collageGrid').innerHTML=c.images.map((img,i)=>{
+        const url=resolveImg(img);
+        const selIdx=collageSelected.indexOf(url);
+        return `<div class="collage-item ${selIdx>=0?'selected':''}" data-num="${selIdx+1||''}"
+          onclick="toggleCollageImg('${url.replace(/'/g,"\\'")}')">
+          <img src="${url}" loading="lazy" onerror="this.parentElement.classList.add('collage-fail')">
+        </div>`;
+      }).join('');
+      updateCollageCount();
+      return;
+    }
+  }
+
+  // 第一级：角色封面列表（一个角色一个格子）
+  backBtn.style.display='none'; pickName.style.display='none';
   let withImgs=data.filter(c=>c.images&&c.images.length>0);
   if(collageRaceFilter) withImgs=withImgs.filter(c=>getRace(c)===collageRaceFilter);
 
-  document.getElementById('collageGrid').innerHTML=withImgs.flatMap(c=>
-    c.images.map((img,i)=>{
-      const url=resolveImg(img);
-      const selIdx=collageSelected.indexOf(url);
-      return `<div class="collage-item ${selIdx>=0?'selected':''}" data-num="${selIdx+1||''}"
-        onclick="toggleCollageImg('${url.replace(/'/g,"\\'")}')">
-        <img src="${url}" loading="lazy" onerror="this.parentElement.classList.add('collage-fail')">
-      </div>`;
-    })
-  ).join('');
+  document.getElementById('collageGrid').innerHTML=withImgs.map(c=>{
+    const cover=resolveImg(c.images[0]);
+    const n=c.images.length;
+    const selN=c.images.filter(u=>collageSelected.includes(resolveImg(u))).length;
+    return `<div class="collage-item ${selN?'selected':''}" title="${esc(c.name)}（${n}张图）"
+      onclick="openCollageChar(${c.id})">
+      <img src="${cover}" loading="lazy" onerror="this.parentElement.classList.add('collage-fail')">
+      <span class="collage-badge">${selN?selN+'·':''}${n}</span>
+    </div>`;
+  }).join('');
+  updateCollageCount();
+}
+function updateCollageCount(){
   document.getElementById('collageCount').textContent=collageSelected.length;
   // 顶栏按钮：未选图时置灰，防止空生成/空保存
   document.getElementById('collageGenBtn').disabled=!collageSelected.length;
   document.getElementById('collageSaveBtn').disabled=!collageSelected.length;
 }
-function setCollageRace(r){collageRaceFilter=r;renderCollageGrid()}
+function openCollageChar(id){collageCharView=id;renderCollageGrid()}
+function backCollageChars(){collageCharView=null;renderCollageGrid()}
+function setCollageRace(r){collageRaceFilter=r;collageCharView=null;renderCollageGrid()}
 function toggleCollageImg(url){
   const i=collageSelected.indexOf(url);
   if(i>=0) collageSelected.splice(i,1);
@@ -1228,8 +1349,8 @@ function openEdit(id){
   document.getElementById('editForm').innerHTML=`
     <div class="form-group"><label>角色名 *</label><input id="fName" value="${c?esc(c.name):''}"></div>
     <div class="form-group"><label>种族</label>
-      <select id="fRace" onchange="document.getElementById('fRaceCustom').style.display=this.value==='其他'?'block':'none'">${['龙族','吸血鬼','恶魔','妖精','天使','魔族','兽人','其他'].map(r=>`<option ${c&&getRace(c)===r?'selected':''}>${r}</option>`).join('')}</select>
-      <input id="fRaceCustom" placeholder="自定义种族名称" style="margin-top:6px;display:${c&&getRace(c)&&!['龙族','吸血鬼','恶魔','妖精','天使','魔族','兽人'].includes(getRace(c))?'block':'none'};" value="${c&&getRace(c)&&!['龙族','吸血鬼','恶魔','妖精','天使','魔族','兽人'].includes(getRace(c))?esc(getRace(c)):''}">
+      <select id="fRace" onchange="document.getElementById('fRaceCustom').style.display=this.value==='其他'?'block':'none'">${['龙族','吸血鬼','机娘','魔女','兽耳娘','精灵','恶魔','妖精','天使','兽人','其他'].map(r=>`<option ${c&&getRace(c)===r?'selected':''}>${r}</option>`).join('')}</select>
+      <input id="fRaceCustom" placeholder="自定义种族名称" style="margin-top:6px;display:${c&&getRace(c)&&!['龙族','吸血鬼','机娘','魔女','兽耳娘','精灵','恶魔','妖精','天使','兽人'].includes(getRace(c))?'block':'none'};" value="${c&&getRace(c)&&!['龙族','吸血鬼','机娘','魔女','兽耳娘','精灵','恶魔','妖精','天使','兽人'].includes(getRace(c))?esc(getRace(c)):''}">
     </div>
     <div class="form-group"><label>出处</label><input id="fSource" value="${c?esc(c.source):''}"></div>
     <div class="form-group"><label>类型</label>
