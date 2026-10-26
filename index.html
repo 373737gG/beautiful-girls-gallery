@@ -58,6 +58,8 @@ button,input,select,textarea{font-family:inherit}
 @media (max-width:768px){
   .header{transition:transform .3s ease}
   .header.header-hidden{transform:translateY(-110%)}
+  /* 手机端滚动性能：视口外的卡片跳过渲染/绘制，快速长滚动不卡顿；auto 记忆真实尺寸避免滚动条跳动 */
+  .grid .card{content-visibility:auto;contain-intrinsic-size:auto 356px}
 }
 .stats{color:var(--text2);font-size:12px;margin-left:auto}
 .tag-bar{padding:4px 24px 12px;display:flex;gap:6px;flex-wrap:wrap;background:transparent}
@@ -214,6 +216,7 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-bottom-width:2px
     <button class="btn" onclick="exportJSON()">导出JSON</button>
     <button class="btn" onclick="document.getElementById('importFile').click()">导入JSON</button>
     <button class="btn" id="cleanOrphansBtn" onclick="cleanOrphans()" title="删除磁盘上未被任何角色引用的图片（仅服务器模式）">🧹 清理孤儿图</button>
+    <button class="btn" id="selfCheckBtn" onclick="selfCheck()" title="核对 页面数据 ↔ index.html ↔ 磁盘图片 三方一致性，只列差异不修改（仅服务器模式）">✅ 确认已保存</button>
     <button class="btn" onclick="toggleTheme()">🌓 主题</button>
     <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
   </div>
@@ -615,13 +618,13 @@ const DEFAULT_DATA = [
 {id:282,name:"或守鞠奈",source:"约会大作战（游戏限定）",type:"精灵",cv:"三森铃子",race:"精灵",desc:"DEM创造的人工电脑AI精灵〈Irregular〉，与鞠亚互为表里、发色服装相反，灵装以黑龙尼德霍格为概念。",story:"PS3游戏《约会大作战 或守Install》原创角色，日文汉字作或守鞠奈，与鞠亚同CV、互为表里。她侵入佛拉克西纳斯舰载电脑系统意图夺取控制权以破坏天宫市，在电脑世界与士道相处后虽也对士道产生好感，仍执意执行原定目的，最终迫使士道将她与鞠亚一同消灭。续作《凛绪轮回》中借凛绪之力在现实世界实体化，并有向士道告白接吻的路线。她日后成为原作量产型伪精灵尼别科尔的外貌原型。",images:["精灵/images_76.jpg","精灵/images_77.jpg","精灵/images_78.jpg"],tags:["人工精灵","DEM造","表里一体"]},
 {id:283,name:"尼别科尔",source:"约会大作战",type:"精灵",cv:"花守由美里",race:"精灵",desc:"威斯考特以魔王〈神蚀篇帙〉书页造出的量产型伪精灵「魔王之女」，复数个体，外貌近似或守鞠奈。",story:"轻小说第十六卷登场、动画《DATE A LIVE IV》出场的DEM量产型伪精灵。个体外貌相同、意识与知觉共有，单体战力不及精灵，却凭数量、共享情报与近乎无限的重生能力碾压对手。曾与艾莲、阿尔缇米希亚一同围杀士道达204次，均被狂三以〈六之弹〉改写。因承袭二亚对士道的好感，无需攻略即可直接接吻封印，但她们只有灵力而无容器，一旦被封印便化为一张纸。铜青色双眸、黑灰双马尾、158cm。",images:["精灵/images_79.jpg","精灵/images_80.jpg","精灵/images_81.jpg"],tags:["量产伪精灵","魔王之女","DEM阵营"]},
 {id:284,name:"普拉娜",source:"蔚蓝档案",type:"AI",cv:"小原好美",race:"机娘",desc:"来自另一世界线「什亭之匣」的主控OS「A.R.O.N.A」，白发遮右眼、左红右蓝异色瞳、黑色水手服长大衣配兔耳蝴蝶结的三无AI姬，阿罗娜的镜像对应者。",story:"《蔚蓝档案》主线最终章登场。她本是悲剧时间线中服务于老师普雷纳帕特斯的什亭之匣OS，其老师被「色彩」吞噬后，她随受损的什亭之匣来到主世界，与阿罗娜合力创造奇迹救回了老师。事后本欲离去，被阿罗娜挽留，以「星象仪」（Planetarium）之意得名「普拉娜」，自此留驻什亭之匣成为老师的第二位秘书，称呼阿罗娜为「前辈」，并加入抽卡演出与部分界面，成为第二位看板娘。",images:["机娘/images_105.jpg","机娘/images_104.jpg","机娘/images_106.jpg","机娘/images_107.jpg","机娘/images_108.jpg","机娘/images_109.jpg"],tags:["什亭之匣","三无"]},
-{id:285,name:"椰子",race:"兽耳娘",source:"猫娘乐园（Nekopara）",type:"猫娘",cv:"水谷麻铃",desc:"水无月家四女，缅因猫品种猫娘，异色瞳的高挑肉感御姐，忠诚心胜过犬类却笨手笨脚。",story:"《猫娘乐园》Vol.2 起的主线角色，水无月家六只猫娘中的四女，品种为体型最大的家猫品种缅因猫，拥有一蓝一金的异色瞳。她身材高挑、外形成熟，却是家中除巧克力和香草外年纪最小的猫娘，身体能力极高，对时雨的忠诚心更在犬类之上。她热心助人却十分笨拙，结果往往以悲剧收场，也常与长女红豆斗嘴。两人原是感情最好的姐妹，因误会生出嫌隙，最终在风波中重修旧好。CV为动画版阵容，游戏版为手冢凉子、OVA版为立石惠。",images:["兽耳娘/c150c55a989e4de4baca8e0c2616584b.jpeg~tplv-a9rns2rl98-cgen_wm0.png","兽耳娘/93d414f9ccd14b1f94ac55b4f209899f.jpeg~tplv-a9rns2rl98-cgen_wm0.png"],tags:["异色瞳","笨拙"],star:false},
+{id:285,name:"椰子",race:"兽耳娘",source:"猫娘乐园（Nekopara）",type:"猫娘",cv:"水谷麻铃",desc:"水无月家四女，缅因猫品种猫娘，异色瞳的高挑肉感御姐，忠诚心胜过犬类却笨手笨脚。",story:"《猫娘乐园》Vol.2 起的主线角色，水无月家六只猫娘中的四女，品种为体型最大的家猫品种缅因猫，拥有一蓝一金的异色瞳。她身材高挑、外形成熟，却是家中除巧克力和香草外年纪最小的猫娘，身体能力极高，对时雨的忠诚心更在犬类之上。她热心助人却十分笨拙，结果往往以悲剧收场，也常与长女红豆斗嘴。两人原是感情最好的姐妹，因误会生出嫌隙，最终在风波中重修旧好。CV为动画版阵容，游戏版为手冢凉子、OVA版为立石惠。",images:["兽耳娘/椰子_1.jpg","兽耳娘/椰子_2.jpg"],tags:["异色瞳","笨拙"],star:false},
 {id:286,name:"涂山容容",race:"兽耳娘",source:"狐妖小红娘",type:"AI",cv:"金元寿子（日）/乔诗语（中）",desc:"人称「千面妖容」的涂山二当家兼管账，算无遗策的最强智囊，精通易容术与幻梦法术，随身算盘。",story:"《狐妖小红娘》中涂山二当家兼管账，红红与雅雅的妹妹、苏苏名义上的姐姐，号「千面妖容」，为涂山最强智囊。主修狐妖易容术与幻梦法术，绝技望月掌，手持算盘、算无遗策。曾收留牛鬼颜如玉并授艺，助其改过自新。她相信苏苏即红红，暗中赠予《纯爱天篇》助其成长，不惜与雅雅对立，并诱导苏苏与白月初的感情自然发展。本体寄托于苦情树的千丝网，平日现身者皆为分身。",images:["兽耳娘/images_7.jpg"],tags:["涂山","智囊"],star:false},
 ];
 
 // ===== 状态 =====
 // 版本号：每次HTML更新后改一下，自动清掉浏览器旧数据
-const DATA_VERSION = '20261027-v37';
+const DATA_VERSION = '20261027-v38';
 if(localStorage.getItem('dg_version') !== DATA_VERSION){
   localStorage.removeItem('dg_data');
   localStorage.setItem('dg_version', DATA_VERSION);
@@ -676,10 +679,12 @@ function save(){
 function isServerMode(){
   return location.protocol === 'http:' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1');
 }
-// 「清理孤儿图」是服务器专属功能：静态网页（GitHub Pages / file://）下隐藏，display:none 不占布局
+// 「清理孤儿图」「确认已保存」是服务器专属功能：静态网页（GitHub Pages / file://）下隐藏，display:none 不占布局
 if(!isServerMode()){
   const _cob = document.getElementById('cleanOrphansBtn');
   if(_cob) _cob.style.display = 'none';
+  const _scb = document.getElementById('selfCheckBtn');
+  if(_scb) _scb.style.display = 'none';
 }
 function saveHistory(){localStorage.setItem('dg_history', JSON.stringify(history.slice(-20)))}
 
@@ -790,7 +795,7 @@ function cardHtml(c){
   const missing = !img || !c.desc;
   return `<div class="card ${missing?'missing':''}" onclick="openView(${c.id})">
     <div class="card-img-wrap">
-      ${img?`<img class="card-img" src="${img}" loading="lazy" onerror="imgFail(this)">`:'<div class="img-fallback">无图</div>'}
+      ${img?`<img class="card-img" src="${img}" loading="lazy" decoding="async" onerror="imgFail(this)">`:'<div class="img-fallback">无图</div>'}
       <button class="card-star ${c.star?'on':''}" data-star-id="${c.id}" onclick="event.stopPropagation();toggleStar(${c.id})">${c.star?'★':'☆'}</button>
       ${pc>1?`<span class="card-pcount">${pc}P</span>`:''}
     </div>
@@ -893,7 +898,7 @@ function openView(id){
   addHistory(id);
   currentViewId=id;
   renderView(id);
-  document.getElementById('viewModal').style.display='flex';
+  openModalTracked('viewModal');
 }
 
 function renderView(id){
@@ -911,7 +916,7 @@ function renderView(id){
   }).join('');
 
   document.getElementById('viewContent').innerHTML=`
-    ${img?`<img class="modal-img" src="${img}" onclick="openFS(${id},${idx})" onerror="imgFail(this)">`:'<div class="img-fallback" style="height:200px;border-radius:10px;margin-bottom:12px">无图片</div>'}
+    ${img?`<img class="modal-img" src="${img}" decoding="async" onclick="openFS(${id},${idx})" onerror="imgFail(this)">`:'<div class="img-fallback" style="height:200px;border-radius:10px;margin-bottom:12px">无图片</div>'}
     ${n>1?`<div class="modal-nav">
       <button class="btn" onclick="navImg(${id},-1)">← 上一张</button>
       <span style="color:var(--text2)">${idx+1} / ${n}</span>
@@ -1330,45 +1335,49 @@ function handleDrop(id,e){
 function processFiles(id,files){
   const c=data.find(x=>x.id===id);
   if(!c.images) c.images=[];
-  let done=0;
-  const total=files.length;
+  const imgs=[...files].filter(f=>f.type&&f.type.startsWith('image/'));
+  if(!imgs.length){toast('所选文件都不是图片');return}
   const isLocal = isServerMode();
   const race = getRace(c);
-  for(const f of files){
-    if(!f.type.startsWith('image/')) continue;
-    if(isLocal){
-      // 本地服务器模式：上传到images/种族/文件夹
+  if(!isLocal){
+    // 直接打开HTML模式：用base64存（原行为不变）
+    let done=0;
+    const total=imgs.length;
+    for(const f of imgs){
+      const reader=new FileReader();
+      reader.onload=function(ev){
+        c.images.push(ev.target.result);
+        if(++done===total){save();renderView(id);render();toast(`已上传 ${total} 张图片（本地存储）`);}
+      };
+      reader.readAsDataURL(f);
+    }
+    return;
+  }
+  // 服务器模式：串行上传——保持选择顺序、引用与上传一一对应；
+  // 文件名由服务器按「角色名_时间戳」生成，杜绝 images_N.jpg 默认流水名同名串图。
+  // 上传失败的不写入图鉴（不再静默降级 base64 塞进 localStorage），最后统一提示。
+  let okCount=0, failCount=0;
+  let chain=Promise.resolve();
+  for(const f of imgs){
+    chain=chain.then(()=>new Promise(resolve=>{
       const fd=new FormData();
       fd.append('image',f);
       fd.append('filename',f.name);
       fd.append('race',race);
+      fd.append('charname',c.name);
       fetch('/upload',{method:'POST',body:fd}).then(r=>r.json()).then(res=>{
-        if(res.ok){
-          c.images.push(res.filename);
-        }
-        done++;
-        if(done===total){save();renderView(id);render();toast(`已上传 ${total} 张图片`);}
+        if(res.ok){ c.images.push(res.filename); okCount++; }
+        else { failCount++; toast(`「${f.name}」上传失败：${res.error||'未知错误'}`); }
+        resolve();
       }).catch(()=>{
-        // 上传失败，降级为base64
-        const reader=new FileReader();
-        reader.onload=function(ev){
-          c.images.push(ev.target.result);
-          done++;
-          if(done===total){save();renderView(id);render();toast(`已上传 ${total} 张图片（本地存储）`);}
-        };
-        reader.readAsDataURL(f);
+        failCount++; toast(`「${f.name}」上传失败（服务器未响应）`); resolve();
       });
-    } else {
-      // 直接打开HTML模式：用base64存
-      const reader=new FileReader();
-      reader.onload=function(ev){
-        c.images.push(ev.target.result);
-        done++;
-        if(done===total){save();renderView(id);render();toast(`已上传 ${total} 张图片（本地存储）`);}
-      };
-      reader.readAsDataURL(f);
-    }
+    }));
   }
+  chain.then(()=>{
+    if(okCount){save();renderView(id);render();}
+    toast(failCount?`已上传 ${okCount} 张，失败 ${failCount} 张（失败的未计入图鉴）`:`已上传 ${okCount} 张图片`);
+  });
 }
 
 function delChar(id){
@@ -1384,7 +1393,7 @@ function delChar(id){
     });
   }
   data=data.filter(x=>x.id!==id);
-  save(); closeModal('viewModal'); render();
+  save(); closeModal('viewModal'); render(false);
   toast('已删除');
 }
 
@@ -1417,7 +1426,7 @@ function openEdit(id){
       <button class="btn" onclick="closeModal('editModal')">取消</button>
     </div>
   `;
-  document.getElementById('editModal').style.display='flex';
+  openModalTracked('editModal');
 }
 
 function esc(s){return String(s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;')}
@@ -1443,7 +1452,7 @@ function saveEdit(id){
     const newId=Math.max(...data.map(c=>c.id),0)+1;
     data.push({id:newId,name,race,source,type,cv,desc,story,images,tags,star:false});
   }
-  save(); closeModal('editModal'); closeModal('viewModal'); render();
+  save(); closeModal('editModal'); closeModal('viewModal'); render(false);
   toast('已保存');
 }
 
@@ -1452,9 +1461,9 @@ function openFS(id,idx){
   fsCharId=id;
   const c=data.find(x=>x.id===id);
   document.getElementById('fsImg').src=resolveImg(c.images[idx]);
-  document.getElementById('fsView').style.display='flex';
+  openModalTracked('fsView');
 }
-function closeFS(){document.getElementById('fsView').style.display='none';fsCharId=null}
+function closeFS(){document.getElementById('fsView').style.display='none';fsCharId=null;restoreScroll()}
 function fsNav(d,e){
   e.stopPropagation();
   const c=data.find(x=>x.id===fsCharId);
@@ -1511,6 +1520,20 @@ function importJSON(e){
     }catch(err){alert('导入失败：'+(err.message||'JSON格式错误'))}
   };
   reader.readAsText(file);
+}
+
+// ===== 保存自检（服务器模式）：核对 页面数据 ↔ index.html ↔ 磁盘图片 三方一致，只列差异不修改 =====
+function selfCheck(){
+  if(!isServerMode()){toast('请用「启动图鉴.bat」服务器模式打开后再自检');return}
+  toast('自检中，请稍候…');
+  fetch('/selfcheck',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
+    .then(r=>r.json()).then(res=>{
+      if(!res.ok){toast('自检失败：'+(res.error||'未知错误'));return}
+      if(!res.issues.length){toast('✅ 三方一致：页面数据、index.html、磁盘图片全部对得上');return}
+      const preview=res.issues.slice(0,12).map(s=>'· '+s).join('\n');
+      const more=res.issues.length>12?`\n……等共 ${res.issues.length} 条差异`:'';
+      alert(`自检发现 ${res.issues.length} 处差异（未做任何修改）：\n\n${preview}${more}`);
+    }).catch(()=>toast('请求失败，请确认服务器已启动'));
 }
 
 // ===== 孤儿图片清理（服务器模式） =====
@@ -1613,7 +1636,18 @@ document.addEventListener('keydown',e=>{
   if(e.key==='ArrowRight' && fsCharId) fsNav(1,{stopPropagation(){}});
 });
 
-function closeModal(id){document.getElementById(id).style.display='none'}
+// ===== 弹窗滚动位置记忆：打开前记录，关闭后恢复，编辑弹窗反复进出不跳顶 =====
+let _modalScrollY = 0;
+function openModalTracked(id){
+  _modalScrollY = window.scrollY;
+  document.getElementById(id).style.display='flex';
+}
+function restoreScroll(){
+  const y=_modalScrollY;
+  // 双 rAF：等弹窗关闭与渲染全部完成后再恢复，确保万无一失
+  requestAnimationFrame(()=>{ window.scrollTo(0,y); requestAnimationFrame(()=>window.scrollTo(0,y)); });
+}
+function closeModal(id){document.getElementById(id).style.display='none';restoreScroll()}
 
 // ===== 手机端：向下滚动隐藏顶部工具栏，向上滚动显示 =====
 // 双保险：JS 侧用 matchMedia 判断窄屏，CSS 规则本身也只在窄屏媒体查询里生效
@@ -1722,8 +1756,11 @@ window.addEventListener('scroll', updateHeaderOnScroll, {passive:true});
   });
 })();
 
-render();
-musicInit();
+// 首屏优化：先让骨架（顶栏/工具栏/搜索框）绘制一帧，再执行数据渲染，减少白屏等待
+requestAnimationFrame(()=>requestAnimationFrame(()=>{
+  render();
+  musicInit();
+}));
 </script>
 </body>
 </html>
