@@ -1,8 +1,8 @@
 # 美少女图鉴 · Agent 编辑使用教程
 
-> 写给后续接手编辑本项目的 AI Agent。2026-10-26 实测总结，全部为本日踩坑实录。
-> 项目路径：`D:\zhumian\工作区\项目归档\美少女图鉴\`
-> 前置阅读：`D:\zhumian\工作区\经验资料\通用经验\静态图鉴HTML数据项目-通用经验.md`（通用坑）
+> 写给后续接手编辑本项目的 AI Agent。2026-10-26 实测总结，全部为本日踩坑实录。  
+> 项目路径：`D:\zhumian\工作区\项目归档\美少女图鉴\`  
+> 前置阅读：`D:\zhumian\工作区\经验资料\通用经验\静态图鉴HTML数据项目-通用经验.md`（通用坑）  
 > 以及本目录 `交接任务书-v2.md`（任务背景）
 
 ---
@@ -22,6 +22,7 @@
 ```
 
 **部署形态有两套，内容同源：**
+
 - 本地：`http://localhost:8899/index.html`（服务器模式，可写回数据）
 - 线上：GitHub Pages（只读，无 /save）
 
@@ -62,14 +63,15 @@ let data = JSON.parse(localStorage.getItem('dg_data') || 'null') || DEFAULT_DATA
 
 ## 四、server.py 的接口与注意事项
 
-| 接口 | 说明 |
-|---|---|
-| `/save` (POST JSON数组) | 把整个 data 数组写回 index.html 的 DEFAULT_DATA 块（括号配对定位，与布局无关） |
-| `/upload` (multipart) | 图片存入 `images/{race}/`，返回相对路径 |
-| `/delete/文件名` (DELETE) | 按文件名在 images/ 下递归查找删除 |
-| `/orphans` (GET) | 列出磁盘有但数据未引用的孤儿图，供前端"清理孤儿图"按钮用 |
+| 接口                     | 说明                                                      |
+| ---------------------- | ------------------------------------------------------- |
+| `/save` (POST JSON数组)  | 把整个 data 数组写回 index.html 的 DEFAULT_DATA 块（括号配对定位，与布局无关） |
+| `/upload` (multipart)  | 图片存入 `images/{race}/`，返回相对路径                            |
+| `/delete/文件名` (DELETE) | 按文件名在 images/ 下递归查找删除                                   |
+| `/orphans` (GET)       | 列出磁盘有但数据未引用的孤儿图，供前端"清理孤儿图"按钮用                           |
 
 **要点：**
+
 - 文件名引用必须是 `index.html`（4 处：/orphans、/save、启动提示、webbrowser.open）。历史上曾改名过，改名/改引用后要全局 grep 一遍
 - 服务器是 ThreadingHTTPServer + allow_reuse_address——**Windows 下 SO_REUSEADDR 允许双绑定不报错**。如果测试时接口行为诡异（比如报错内容是旧代码的），先 `netstat -ano | findstr 8899` 查是不是有旧进程占着端口，有就杀掉
 - `/save` 写回是**全量替换** DEFAULT_DATA 块：浏览器里的 data 是什么，文件就变成什么。测试接口后要么还原文件，要么升版本号

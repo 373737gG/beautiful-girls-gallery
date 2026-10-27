@@ -376,24 +376,46 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def do_DELETE(self):
         if self.path.startswith('/delete/'):
             rel_path = urllib.parse.unquote(self.path[len('/delete/'):])
-            # 防止路径穿越
-            rel_path = os.path.basename(rel_path)
-            img_dir = os.path.join(DIR, 'images')
-            # 递归查找文件
-            for root, dirs, files in os.walk(img_dir):
-                if rel_path in files:
-                    file_path = os.path.join(root, rel_path)
-                    try:
-                        os.remove(file_path)
-                        self.send_response(200)
-                        self.send_header('Content-Type', 'application/json')
-                        self.end_headers()
-                        self.wfile.write(b'{"ok":true}')
-                        return
-                    except:
-                        pass
-            self.send_response(404)
-            self.end_headers()
+            img_root = os.path.join(DIR, 'images')
+            # 1) 优先按完整相对路径精确删除（如 兽耳娘/xxx.jpg），杜绝跨目录误删同名文件
+            cand = os.path.normpath(os.path.join(img_root, rel_path))
+            in_root = cand.startswith(img_root + os.sep)   # 防路径穿越
+            if in_root and os.path.isfile(cand):
+                try:
+                    os.remove(cand)
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(b'{"ok":true}')
+                except OSError:
+                    self.send_response(500)
+                    self.end_headers()
+                return
+            # 2) 回退：仅文件名（旧引用兼容）——递归查找，但同名多处时拒绝删除（避免误删）
+            only_name = os.path.basename(rel_path)
+            matches = []
+            for root, dirs, files in os.walk(img_root):
+                if only_name in files:
+                    matches.append(os.path.join(root, only_name))
+            if len(matches) == 1:
+                try:
+                    os.remove(matches[0])
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(b'{"ok":true}')
+                except OSError:
+                    self.send_response(500)
+                    self.end_headers()
+            elif len(matches) > 1:
+                # 多处同名：不猜，拒绝删除（防止跨角色串删）
+                self.send_response(409)
+                self.send_header('Content-Type', 'application/json; charset=utf-8')
+                self.end_headers()
+                self.wfile.write(json.dumps({'ok': False, 'error': f'存在 {len(matches)} 个同名文件，请通过编辑图片引用精确删除'}, ensure_ascii=False).encode('utf-8'))
+            else:
+                self.send_response(404)
+                self.end_headers()
 
     def log_message(self, format, *args):
         pass  # 静默默认日志
