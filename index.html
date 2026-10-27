@@ -67,7 +67,7 @@ button,input,select,textarea{font-family:inherit}
 .race-tab:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
 .race-tab.active{background:var(--grad-btn);color:#fff;border-color:transparent;box-shadow:0 2px 10px rgba(31,111,235,.35)}
 .race-tab .count{font-size:11px;opacity:.75;margin-left:4px;font-weight:normal}
-.tag{background:var(--bg2);border:1px solid var(--border);color:var(--text2);padding:3px 11px;border-radius:999px;font-size:12px;cursor:pointer;transition:all .15s}
+.tag{background:var(--bg2);border:1px solid rgba(88,166,255,.4);color:var(--text2);padding:3px 11px;border-radius:999px;font-size:12px;cursor:pointer;transition:all .15s}
 .tag:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
 .tag.active{background:var(--grad-btn);color:#fff;border-color:transparent;box-shadow:0 2px 8px rgba(31,111,235,.3)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:18px;padding:24px}
@@ -752,8 +752,8 @@ function render(reset){
     subBar.style.display='none'; subBar.innerHTML='';
   }
 
-  // 标签栏（展开时带筛选输入框，输入时只刷新标签区不重建输入框）
-  const allTags=[...new Set(data.flatMap(c=>c.tags||[]))].sort();
+  // 标签栏（只列高频标签：被≥2个角色使用；低频个人特标不进筛选区，仍可用搜索/卡片查看）
+  const allTags=highFreqTags();
   const tagToggle = `<span class="tag" onclick="toggleTags()" style="border-style:dashed;color:var(--text2)">${tagsExpanded?'收起 ▲':`展开标签(${allTags.length}) ▼`}</span>`;
   let tagFilterHtml='';
   let tagListHtml='';
@@ -852,9 +852,15 @@ function imgFail(el){
   d.textContent='图片加载失败';
   el.replaceWith(d);
 }
-// 标签列表（标签栏筛选输入时只刷新这一段）
+// 高频标签：被 ≥2 个角色使用的标签（筛选区只列这些；纯统计，不动数据）
+function highFreqTags(){
+  const cnt={};
+  data.forEach(c=>(c.tags||[]).forEach(t=>cnt[t]=(cnt[t]||0)+1));
+  return Object.keys(cnt).filter(t=>cnt[t]>=2).sort();
+}
+// 标签列表（标签栏筛选输入时只刷新这一段；同样只显示高频标签）
 function renderTagList(){
-  const allTags=[...new Set(data.flatMap(c=>c.tags||[]))].sort();
+  const allTags=highFreqTags();
   const shown = allTags.filter(t=>!tagFilterText||t.toLowerCase().includes(tagFilterText.toLowerCase()));
   return shown.map(t=>`<span class="tag ${t===activeTag?'active':''}" onclick="setTag('${t}')">${t}</span>`).join('')
     || '<span style="color:var(--text2);font-size:12px;align-self:center">无匹配标签</span>';
