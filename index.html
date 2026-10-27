@@ -1413,8 +1413,8 @@ function openEdit(id){
   document.getElementById('editForm').innerHTML=`
     <div class="form-group"><label>角色名 *</label><input id="fName" value="${c?esc(c.name):''}"></div>
     <div class="form-group"><label>种族</label>
-      <select id="fRace" onchange="document.getElementById('fRaceCustom').style.display=this.value==='其他'?'block':'none'">${['龙族','吸血鬼','机娘','魔女','兽耳娘','精灵','恶魔','妖精','天使','兽人','其他'].map(r=>`<option ${c&&getRace(c)===r?'selected':''}>${r}</option>`).join('')}</select>
-      <input id="fRaceCustom" placeholder="自定义种族名称" style="margin-top:6px;display:${c&&getRace(c)&&!['龙族','吸血鬼','机娘','魔女','兽耳娘','精灵','恶魔','妖精','天使','兽人'].includes(getRace(c))?'block':'none'};" value="${c&&getRace(c)&&!['龙族','吸血鬼','机娘','魔女','兽耳娘','精灵','恶魔','妖精','天使','兽人'].includes(getRace(c))?esc(getRace(c)):''}">
+      <select id="fRace" onchange="document.getElementById('fRaceCustom').style.display=this.value==='其他'?'block':'none'">${['龙族','吸血鬼','机娘','魔女','兽耳娘','精灵','恶魔','妖精','天使','其他'].map(r=>`<option ${c&&getRace(c)===r?'selected':''}>${r}</option>`).join('')}</select>
+      <input id="fRaceCustom" placeholder="自定义种族名称" style="margin-top:6px;display:${c&&getRace(c)&&!['龙族','吸血鬼','机娘','魔女','兽耳娘','精灵','恶魔','妖精','天使'].includes(getRace(c))?'block':'none'};" value="${c&&getRace(c)&&!['龙族','吸血鬼','机娘','魔女','兽耳娘','精灵','恶魔','妖精','天使'].includes(getRace(c))?esc(getRace(c)):''}">
     </div>
     <div class="form-group"><label>出处</label><input id="fSource" value="${c?esc(c.source):''}"></div>
     <div class="form-group"><label>类型</label>
