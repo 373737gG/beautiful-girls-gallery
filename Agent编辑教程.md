@@ -1,9 +1,9 @@
 # 美少女图鉴 · Agent 编辑使用教程
 
-> 写给后续接手编辑本项目的 AI Agent。2026-10-26 实测总结，全部为本日踩坑实录。  
-> 项目路径：`D:\zhumian\工作区\项目归档\美少女图鉴\`  
-> 前置阅读：`D:\zhumian\工作区\经验资料\通用经验\静态图鉴HTML数据项目-通用经验.md`（通用坑）  
-> 以及本目录 `交接任务书-v2.md`（任务背景）
+> 写给后续接手编辑本项目的 AI Agent。2026-10-26 首版实测总结，2026-10-27 七项优化后全面更新。
+> 项目路径：`D:\zhumian\工作区\项目归档\美少女图鉴\`
+> 前置阅读：`D:\zhumian\工作区\经验资料\通用经验\静态图鉴HTML数据项目-通用经验.md`（通用坑）
+> 历史任务书与报告已归档于 `归档-20261027\任务书与设定文档\`
 
 ---
 
@@ -12,114 +12,114 @@
 ```
 美少女图鉴/
 ├─ index.html          # 核心：单文件应用（UI+CSS+JS+DEFAULT_DATA 数据全在一个文件）
-├─ server.py           # 本地服务器，端口 8899，提供 /save /upload /delete /orphans 接口
+├─ server.py           # 本地服务器，端口 8899，/save /upload /delete /orphans /selfcheck
 ├─ 启动图鉴.bat         # 双击启动 server.py 并自动开浏览器
 ├─ 同步到网站.bat       # 部署 GitHub Pages（github.com/373737gG/beautiful-girls-gallery）
-├─ images/             # 角色图片，按种族分子目录（龙族/吸血鬼/机娘/魔女/其他）
-├─ 工具脚本/            # 历史一次性脚本（迁移/清理用），文件名引用已统一为 index.html
-├─ 交接任务书-v2.md     # 本轮交接任务
-└─ *.bak-*             # 历次修改的备份（改文件前必须先做备份，命名：xxx.bak-YYYYMMDD-用途）
+├─ Agent编辑教程.md     # 本文档
+├─ images/             # 角色图片，按种族子目录；文件名一律 角色名_N.扩展名
+├─ 工具脚本/            # 正式工具（接图助手.py 等）
+└─ 归档-20261027/       # 历史备份（仅最新2个）、一次性脚本、研究数据、任务书与设定文档
 ```
 
-**部署形态有两套，内容同源：**
-
+**部署形态两套，内容同源：**
 - 本地：`http://localhost:8899/index.html`（服务器模式，可写回数据）
-- 线上：GitHub Pages（只读，无 /save）
+- 线上：GitHub Pages（只读，无 /save /upload /selfcheck）
 
 ---
 
-## 二、最重要的机制：DEFAULT_DATA + localStorage + DATA_VERSION ⭐⭐⭐
-
-页面加载数据的顺序（index.html 内）：
+## 二、数据机制：DEFAULT_DATA + localStorage + DATA_VERSION ⭐⭐⭐
 
 ```js
-const DATA_VERSION = '20261026-v24';
+const DATA_VERSION = '20261027-v39';
 if(localStorage.getItem('dg_version') !== DATA_VERSION){
-  localStorage.removeItem('dg_data');          // 版本变了→清缓存
+  localStorage.removeItem('dg_data');   // 版本变了→清缓存
   localStorage.setItem('dg_version', DATA_VERSION);
 }
 let data = JSON.parse(localStorage.getItem('dg_data') || 'null') || DEFAULT_DATA;
 ```
 
-**由此推出三条铁律：**
+**三条铁律：**
+1. **改了 DEFAULT_DATA（或 /save 写回）后必须 +1 DATA_VERSION**，否则老浏览器显示 localStorage 旧数据（"文件里 281 人，页面显示 230"级灵异现象都先查这个）。
+2. 升版本副作用：收藏、页面自改信息重置为文件内容；dg_history 最近浏览不受影响。提前告知用户。
+3. localStorage 按 origin 隔离：localhost:8899 与 file:// 是两份缓存。
 
-1. **改了 DEFAULT_DATA（或让 /save 写回了新数据）之后，必须同步升 DATA_VERSION**，否则所有看过旧版的浏览器继续显示 localStorage 里的旧数据——表现为"文件里 233 人，页面显示 230 人"这种灵异现象（2026-10-26 实际发生）。
-2. 升版本的副作用：**收藏、页面里自改的角色信息会重置为文件内容**（dg_history 最近浏览不受影响）。这是设计如此，不是 bug，但要提前告知用户。
-3. localStorage 按 origin 隔离：localhost:8899 和 file://（直接双击 index.html）是**两份不同的缓存**，所以两种打开方式人数可能不一样——先怀疑缓存，再怀疑文件。
-
----
-
-## 三、"龙族"人数对不上？先分清 race 和 type ⭐⭐⭐
-
-页面种族 Tab 按 **race 字段**统计：`getRace(c) = c.race || '龙族'`（**缺省=龙族**）。
-
-- 文件里**没有任何一条显式 `race:"龙族"`**——69+ 条无 race 字段的角色全部默认计入龙族
-- `type` 是另一个维度（如 type:"龙娘" 是龙族种族下的类型；还有"龙之巫女""真龙"等）
-- 所以：数 `race:"龙族"` = 0，数 `type:"龙娘"` ≈ 58，页面龙族 Tab ≈ 72——三个数字都不相等，**都对**
-- 新增种族（兽耳娘/精灵）已在 `RACE_ORDER` 常量里常驻显示，细分标签（狐/猫/犬/狼、约会大作战）在 `SUBTYPES` 常量里，匹配逻辑 `matchSubType()` 按 type→tags→source 三层兜底
-- 编辑表单的种族下拉列表在 `openEdit()` 里，加新种族要同步改那里
+版本演进：v37（20261027 七项优化前）→ v38（椰子挂图）→ **v39（引用规范化，当前）**。
 
 ---
 
-## 四、server.py 的接口与注意事项
+## 三、图片命名规范（2026-10-27 起，防串图的根本）⭐⭐⭐
 
-| 接口                     | 说明                                                      |
-| ---------------------- | ------------------------------------------------------- |
-| `/save` (POST JSON数组)  | 把整个 data 数组写回 index.html 的 DEFAULT_DATA 块（括号配对定位，与布局无关） |
-| `/upload` (multipart)  | 图片存入 `images/{race}/`，返回相对路径                            |
-| `/delete/文件名` (DELETE) | 按文件名在 images/ 下递归查找删除                                   |
-| `/orphans` (GET)       | 列出磁盘有但数据未引用的孤儿图，供前端"清理孤儿图"按钮用                           |
+**全部图片一律 `角色名_序号.扩展名`**（如 `赫萝_1.jpg`、`艾姬多娜_3.png`）。历史上 270 张默认名（images_N.jpg、32位hash、~tplv CDN 名）已于 v39 全部规范化。
 
-**要点：**
+**为什么必须这样**：早期 images_N.jpg 这类浏览器默认名导致同名覆盖/误删，是"图跳串""图消失"系列事故的物理根源（详见归档中的交接回执-v3 根因说明）。
 
-- 文件名引用必须是 `index.html`（4 处：/orphans、/save、启动提示、webbrowser.open）。历史上曾改名过，改名/改引用后要全局 grep 一遍
-- 服务器是 ThreadingHTTPServer + allow_reuse_address——**Windows 下 SO_REUSEADDR 允许双绑定不报错**。如果测试时接口行为诡异（比如报错内容是旧代码的），先 `netstat -ano | findstr 8899` 查是不是有旧进程占着端口，有就杀掉
-- `/save` 写回是**全量替换** DEFAULT_DATA 块：浏览器里的 data 是什么，文件就变成什么。测试接口后要么还原文件，要么升版本号
-- 排查接口一律实测：起服务 → curl/urllib 请求 → 看响应体。报错信息在 500 的 JSON body 里（`{"ok":false,"error":...}`）
+**三条上传路径的行为：**
+| 路径 | 文件名 | 说明 |
+|---|---|---|
+| 页面拖拽/上传按钮（服务器模式） | 自动 `角色名_时间戳` | /upload 带 charname，无需手动改名 ✅ 用户日常用这条 |
+| 手动复制文件进 images\ 目录 | 需跑 `工具脚本\接图助手.py` | 交互输入角色名 → 自动改名+接引用+升版本 |
+| AI 批量接图 | 锚点替换 images 字段 | 改名用 Python os.rename（勿用 Git Bash mv 传中文） |
 
 ---
 
-## 五、改代码的标准流程（Checklist）
+## 四、server.py 接口（v39 现状）
 
-1. **备份**：`index.html` → `index.html.bak-YYYYMMDD-用途`（用 Python shutil，别用 Git Bash mv 传中文）
-2. **改前摸底**：先 grep 确认要改的锚点唯一；数据块每角色一行，别动 `DEFAULT_DATA = [` 到 `];` 之外的代码
-3. **改完**：升 DATA_VERSION（若动了数据或想让用户端生效）
-4. **验证**（三层，按需选做）：
-   - 语法：提取 `<script>` 内容用 `node --check` 验 JS；`py_compile` 验 Python
-   - 逻辑：jsdom 冒烟测试（装在 `C:\Users\Chong\.workbuddy\binaries\node\workspace\node_modules`），加载整个 HTML 跑断言
-   - 接口：临时起 server 实测 /save /orphans，**测完把 index.html 字节级还原**（sha256 对比）
-5. **git commit**（用户习惯 commit message 为"更新图鉴"）
+| 接口 | 说明 |
+|---|---|
+| `/save` (POST JSON) | 全量替换 DEFAULT_DATA 块（括号配对定位）。**写回是全量的：浏览器 data 是什么文件就变什么**——外部编辑文件后必须让用户刷新页面（或升版本强制清缓存）再操作页面，否则旧数据覆盖回来 |
+| `/upload` (multipart) | 字段：image/filename/race/**charname**。文件名自动 `角色名_YYYYMMDD_HHMMSS_序号`；浏览器默认流水名一律替换；扩展名白名单 |
+| `/delete/相对路径` | **按完整相对路径精确删除**（2026-10-27 修复：旧版按文件名全局递归删，曾误删 02 的同名图）；仅文件名回退时要求唯一匹配，多处同名返回 409 拒删 |
+| `/orphans` (GET) | 磁盘有但数据未引用的图 |
+| `/selfcheck` (POST 页面data) | 保存自检（只读）：页面↔index.html 十字段逐角色核对 + 图片三方核对，返回 issues 数组 |
 
----
-
-## 六、当前功能清单（改代码别把这些弄坏）
-
-- 列表：分页加载（首屏16，IntersectionObserver rootMargin 600px，搜索/筛选重置分页）
-- 收藏：**原地更新星标**（toggleStar 不再整页 render，避免分页重置跳顶）；按收藏排序只在改排序时生效
-- 拼图：顶部固定栏；两级选择（角色封面+右上角数字badge → 点进去选外观）；canvas 自动 cover 裁剪 + 拖动/滚轮微调；最多9张
-- 分类：固定种族顺序 RACE_ORDER = 龙族/吸血鬼/机娘/魔女/兽耳娘/精灵；兽耳娘有狐/猫/犬/狼细分行，精灵有"约会大作战"细分
-- 其他：轮播（封面/全部图两种模式）、随机、导入导出JSON、背景音乐（扫 assets/music/ 目录）、手机端滚动隐藏顶栏、右键/长按保存图片
+- 启动顺序：先绑端口（失败重试3次）→ 延迟 0.5s 再开浏览器（根治"拒绝连接"）。
+- 排查接口实测：Windows 下 SO_REUSEADDR 允许双绑定不报错，行为诡异先 `netstat -ano | findstr 8899` 杀旧进程。
+- 改 server.py 后必须重启 bat 才生效。
 
 ---
 
-## 七、工具链的坑（本日实测）
+## 五、改代码标准流程
 
-- **Git Bash 内联 python -c 传中文/引号必炸**：`race:\"...\"` 这类写进 bash 双引号会被改写。**一律写成 .py 脚本文件再执行**，别赌内联
-- Git Bash `mv` 中文文件名会 GBK 乱码：改名用 Python `os.rename`
-- Python 文本模式写文件 `\n` → `\r\n`（Windows），断言行尾时注意
-- 读完文件再写回会丢 BOM/换行风格，正式文件改完要 sha256 与预期比对
-- Python `print` 中文在 GBK 控制台乱码 ≠ 数据坏了：用 `ascii(name)` 转义输出核验真实内容
-- jsdom 测试注意：`let` 声明的变量不挂 window（用 `window.eval()` 读内部状态）；IntersectionObserver 要打桩；每次 render 都会 new 观察器实例
-- 测试会弹浏览器的代码（webbrowser.open）：用 `importlib` 导入 server.py（`__name__ != '__main__'`）自己起线程，不要直接跑 `__main__`
-
----
-
-## 八、备份与版本记录
-
-- `index.html.bak-20261026-分页拼图分类`：v23 改造前（分页/拼图两级/新分类 改动前）
-- `server.py.bak-20261026-文件名修复`：文件名修复前（还引用 美少女图鉴.html 的版本）
-- DATA_VERSION 演进：v22 → v23（2026-10-26 上午，分页/拼图/分类改造）→ v24（2026-10-26 傍晚，数据更新到233人后强制清缓存）
+1. **备份**：index.html → `index.html.bak-YYYYMMDD-用途`。**约定：全项目只保留最新一份备份**（旧备份删除，git 历史里永久可查）。
+2. **摸底**：grep 确认锚点唯一；数据块每角色一行，不动 `DEFAULT_DATA=[` 到 `];` 之外的代码。
+3. **改完**：动数据必升 DATA_VERSION。
+4. **验证**：
+   - 语法：提取 `<script>` 用 `node --check`；server.py 用 py_compile。
+   - 逻辑：jsdom 冒烟（桩：matchMedia/IntersectionObserver/fetch/scrollY 内联注入，runScripts:'dangerously'，let 变量才能用 window.eval 读）。
+   - 引用审计：missing / orphans / shared 三零即健康（审计脚本思路见通用经验 §2.2 补丁后三查）。
+   - 接口：临时起 server 实测，测完 sha256 比对还原。
+5. **git commit**（message 惯例"更新图鉴"）。
 
 ---
 
-*最后提醒：任何"页面和文件对不上"的问题，九成是 localStorage 缓存——先升 DATA_VERSION，再查别的。*
+## 六、当前功能清单（别弄坏）
+
+- 列表：分页（首屏16，哨兵 IO 追加）；手机端卡片 content-visibility:auto（仅窄屏媒体查询，桌面零改动）
+- 弹窗：滚动位置记忆（openModalTracked/restoreScroll，关闭后双 rAF 恢复；saveEdit/delChar 用 render(false) 保分页高度不跳顶）
+- 收藏：原地更新；拼图：两级选择+canvas 裁剪；轮播/随机/导入导出/主题/快捷键/背景音乐
+- 服务器专属按钮：「清理孤儿图」「✅ 确认已保存」（selfCheck），非服务器模式 display:none
+- 首屏：render 双 rAF 延后执行（骨架先绘，减少白屏）
+- 图片保存菜单：右键/长按弹菜单下载原图
+
+---
+
+## 七、工具链的坑（实测）
+
+- Git Bash 内联 `python -c` 传中文/引号/反引号必炸——**一律写 .py 文件执行**；`mv` 中文文件名会 GBK 乱码，改名用 os.rename。
+- Python 文本写文件 \n→\r\n；print 中文 GBK 控制台乱码≠数据坏，用 ascii() 核验真实内容。
+- 单线程 http.server 会被浏览器空闲预连接饿死——保持 ThreadingHTTPServer。
+- /save 全量写回 + 用户页面同时操作 = 覆盖冲突：外部改文件前让用户先停手，改完让用户刷新。
+- PIL save() 异常会把目标截断为 0 字节：批量转格式前逐文件备份，转后 verify()。
+- 删除纪律：只归档移动不物理删除（`.creative-design\撤回错图\` 是用户暂存区，别动）；确需删除先列清单，且仅限 git 已 commit 的文件。
+
+---
+
+## 八、待办与遗留（2026-10-27 交接时点）
+
+- 手机端 content-visibility 滚动手感建议真机复验（contain-intrinsic-size 356px 如有跳动可调准）。
+- `.creative-design\撤回错图\` 累积 16 张撤下图（12 错图 + 椰子相关 4 张），由用户自行处置。
+- 引用规范化保留未改：角色id_N（4_1.jpg）、日期主题名（230801-wolf-01）、05_角色名 等有语义名——用户如要求统一再处理。
+
+---
+
+*最后提醒：任何"页面和文件对不上"的问题，九成是 localStorage 缓存——先升 DATA_VERSION，再查别的。图片问题先跑引用审计（missing/orphans/shared 三零即健康）。*
