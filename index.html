@@ -199,6 +199,31 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-bottom-width:2px
 .music-controls button:hover{border-color:var(--accent);color:var(--accent)}
 .music-vol{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)}
 .music-vol input{flex:1;accent-color:var(--accent)}
+/* ===== 生日功能 ===== */
+.bday-banner{margin:0 24px;padding:9px 16px;border:1px solid rgba(227,179,65,.45);border-radius:12px;background:linear-gradient(135deg,rgba(227,179,65,.14),rgba(88,166,255,.07));font-size:13px;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:10px;transition:border-color .15s}
+.bday-banner:hover{border-color:var(--star)}
+.bday-banner .bb-today{color:var(--star);font-weight:700}
+.bday-banner .bb-names{color:var(--text2);font-size:12px;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.bday-banner .bb-more{margin-left:auto;font-size:12px;color:var(--accent);white-space:nowrap;flex-shrink:0}
+.card-bday{font-size:12px;color:var(--text2);margin-top:6px}
+.card-bday.is-today{color:var(--star);font-weight:700}
+.card.today-card{border-color:var(--star);box-shadow:0 0 0 2px rgba(227,179,65,.4)}
+.card.today-card .card-img-wrap::after{content:"🎂";position:absolute;top:8px;right:8px;font-size:22px;z-index:5;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5))}
+.bday-months{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:14px 0}
+.bday-month-btn{padding:8px 4px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text2);font-size:12px;text-align:center;cursor:pointer;transition:border-color .15s}
+.bday-month-btn:hover{border-color:var(--accent)}
+.bday-month-btn.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:700}
+.bday-month-btn .mcnt{display:block;font-size:11px;opacity:.75;margin-top:2px;font-weight:normal}
+.bday-rows{display:flex;flex-direction:column;gap:8px}
+.bday-row{display:flex;align-items:center;gap:12px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:8px 12px;cursor:pointer;transition:border-color .15s}
+.bday-row:hover{border-color:var(--accent)}
+.bday-row img{width:40px;height:40px;border-radius:8px;object-fit:cover;flex-shrink:0}
+.bday-row .bi{flex:1;min-width:0}
+.bday-row .bn{font-size:13px;font-weight:700;color:var(--text)}
+.bday-row .bs{font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bday-row .bd{font-size:12px;color:var(--star);font-weight:700;white-space:nowrap}
+.bday-row.today{border-color:var(--star)}
+.bday-row .bbadge{font-size:11px;color:#1f2328;background:var(--star);border-radius:999px;padding:1px 8px;font-weight:700;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -211,6 +236,7 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-bottom-width:2px
     <button class="btn" onclick="startCarousel()">🎞️ 轮播</button>
     <button class="btn" id="starFilterBtn" onclick="toggleStarFilter()">⭐ 收藏</button>
     <button class="btn" onclick="openCollage()">💖 选最爱</button>
+    <button class="btn" onclick="openBdayModal()">🎂 生日</button>
     <button class="btn" id="viewToggleBtn" onclick="toggleView()">📋 紧凑</button>
     <button class="btn" onclick="exportFiltered()">📥 导出筛选</button>
     <button class="btn" onclick="exportJSON()">导出JSON</button>
@@ -224,12 +250,14 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-bottom-width:2px
 
 <div class="dash" id="dash"></div>
 
+<div class="bday-banner" id="bdayBanner" style="display:none" onclick="openBdayModal()"></div>
+
 <div class="race-bar" id="raceBar"></div>
 
 <div class="tag-bar" id="subTypeBar" style="display:none;padding-top:0"></div>
 
 <div class="toolbar">
-  <input type="text" id="searchBox" placeholder="搜索：角色名 / 出处 / 标签 / CV / 设定 / 剧情..." oninput="render()" onkeyup="if(event.key==='/')event.preventDefault()">
+  <input type="text" id="searchBox" placeholder="搜索：角色名 / 出处 / 标签 / CV / 设定 / 剧情 / 生日（如 8月、8-13、0813）..." oninput="render()" onkeyup="if(event.key==='/')event.preventDefault()">
   <select id="filterSource" onchange="render()"><option value="">全部出处</option></select>
   <select id="filterType" onchange="render()"><option value="">全部类型</option></select>
   <select id="sortBy" onchange="render()">
@@ -250,6 +278,15 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-bottom-width:2px
   <div class="modal">
     <button class="modal-close" onclick="closeModal('viewModal')">×</button>
     <div id="viewContent"></div>
+  </div>
+</div>
+
+<!-- 生日弹窗 -->
+<div class="modal-overlay" id="bdayModal" onclick="if(event.target===this)closeModal('bdayModal')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('bdayModal')">×</button>
+    <h3 style="color:var(--text)">🎂 生日面板 <span id="bdayTotal" style="font-size:12px;color:var(--text2);font-weight:normal;margin-left:6px"></span></h3>
+    <div id="bdayModalBody"></div>
   </div>
 </div>
 
@@ -360,7 +397,7 @@ const DEFAULT_DATA = [
 {id:16,name:"米莉姆·纳瓦",source:"转生史莱姆",type:"龙娘",desc:"龙魔人，最古老三位魔王之一，称号破坏的暴君，创世神星王龙维鲁多拿巴与勇者鲁德拉妹妹露西亚之女，2000+岁身高135cm粉发，拥有无限魔素，少数能操纵星粒子的存在",story:"转生史莱姆。创世神星王龙维鲁多拿巴与勇者鲁德拉妹妹露西亚之女，两千年以上的最古老魔王之一，称号「破坏的暴君」。被利姆鲁用美食与真心收服成头号挚友。因克雷曼操纵挚友之死而真正暴怒的那一战，是她两千年里少有的认真：一人踏平对方魔国，无限魔素与星粒子解放，天地变色。日常是抱着利姆鲁撒娇的135cm萝莉魔王。两千年孤独的魔王，在利姆鲁这里第一次有了「朋友」这个词。",images:["龙族/16_3.png","龙族/米莉姆·纳瓦_1.jpg","龙族/米莉姆_1.jpg"],tags:["萝莉","魔王","龙魔人"],race:"龙族",cv:""},
 {id:17,name:"西尔菲德",source:"零之使魔",type:"龙娘",cv:"井口裕香",desc:"塔巴莎的使魔（韵龙），全长6米，人形态名依露库库（蓝发美女，身材好个子高，称呼塔巴莎为姐姐）",story:"零之使魔。塔巴莎的使魔「韵龙」，全长六米的巨龙，人形态依露库库则是身材高挑的蓝发美女。她称呼年幼的主人「姐姐」，人龙双形切换自由。在塔巴莎被王族阴谋与母亲疯病的阴影裹挟时，西尔菲德是唯一无条件陪她飞进风暴的存在——无论龙形还是人形，都守在姐姐身边。六米长的龙躯之下，是一颗认定了「姐姐」就绝不更改的心。",images:["龙族/西尔菲德_2.jpg"],tags:["蓝发"],race:"龙族"},
 {id:18,name:"缇亚·莱特宁",source:"无限法夫纳",type:"龙之巫女",desc:"布伦希尔德教室9号，粉发娇小少女，自称悠的新娘，头上两只红角（琦莉为黑客尤克特拉希尔装设），第6卷后成为绿之尤克特拉希尔新核心，夺走其权能，第9卷自愿被悠龙化龙纹变苍蓝色",story:"铳皇无尽的法夫纳。布伦希尔德教室9号，自称「悠的新娘」的粉发娇小少女。头顶两只红角其实是琦莉为击倒尤克特拉希尔而装设的装置。第6卷吸收绿之尤克特拉希尔成为新核心并夺走其权能，从「被制造的新娘」变成真正的力量持有者；第9卷自愿接受悠的龙化，龙纹变为苍蓝色——她用整个存在兑现了新娘宣言，是教室里最莽也最纯粹的爱。从装置到核心，从新娘到战士——缇亚把「我喜欢你」活成了动词。",images:["龙族/缇亚_1.jpg"],tags:["萝莉"],race:"龙族",cv:""},
-{id:19,name:"莉莎·海渥卡",source:"无限法夫纳",type:"龙之巫女",cv:"金元寿子",desc:"布伦希尔德教室1号，16岁，5月15日生，金发碧眼英国籍少女，班级领导者把同学当家人，龙纹位置在臀部，击败白之龙利维坦后获万有斥力能力，击败黄之龙赫拉斯瓦尔格尔后获显灵粒子。",story:"铳皇无尽的法夫纳。布伦希尔德教室1号，16岁的英国籍金发碧眼少女，5月15日生。把全班同学当家人的领导者，龙纹位置在臀部，是本人最不想被提起的秘密。击败白之龙利维坦后获得「万有斥力」，击败黄之龙赫拉斯瓦尔格尔后再获「显灵粒子」——两场龙战下来，这位大小姐以自己的权能撑起整间教室的防线。臀部的龙纹是她的软肋，也是她两战封神的勋章。",images:["龙族/莉莎_1.jpg","龙族/19_1.png","龙族/19_2.png"],tags:["大小姐","领导者"]},
+{id:19,name:"莉莎·海渥卡",source:"无限法夫纳",type:"龙之巫女",cv:"金元寿子",birth:"5-15",desc:"布伦希尔德教室1号，16岁，5月15日生，金发碧眼英国籍少女，班级领导者把同学当家人，龙纹位置在臀部，击败白之龙利维坦后获万有斥力能力，击败黄之龙赫拉斯瓦尔格尔后获显灵粒子。",story:"铳皇无尽的法夫纳。布伦希尔德教室1号，16岁的英国籍金发碧眼少女，5月15日生。把全班同学当家人的领导者，龙纹位置在臀部，是本人最不想被提起的秘密。击败白之龙利维坦后获得「万有斥力」，击败黄之龙赫拉斯瓦尔格尔后再获「显灵粒子」——两场龙战下来，这位大小姐以自己的权能撑起整间教室的防线。臀部的龙纹是她的软肋，也是她两战封神的勋章。",images:["龙族/莉莎_1.jpg","龙族/19_1.png","龙族/19_2.png"],tags:["大小姐","领导者"]},
 {id:21,name:"莉姆",source:"异世界迷宫黑心企业",type:"龙娘",cv:"久野美咲",desc:"代特莫尔德迷宫遇到的龙型魔物，暴食魔神称号，平时少女姿态，饭量大经常饿，不进食凶暴性增加，极度好吃懒做，男主二之宫锦司用美食收服。",story:"异世界迷宫黑心企业。迷宫深处的龙型魔物，称号「暴食魔神」。平时是粉发绿眼的少女姿态，一旦饿了就凶暴化，饭量足以吃空一整层迷宫。被调入迷宫的黑心企业员工二之宫锦司用美食一步步收服，成了公司的龙形招牌——在连呼吸都要扣钱的公司里，她的好吃懒做与偶尔的凶暴反差，是全番最稳的笑点担当。对暴食魔神而言，世界上只有两种东西：能吃的，和还没来得及吃的。",images:["龙族/莉姆_1.jpg","龙族/莉姆_2.jpg"],tags:["吃货","暴食魔神"],race:"龙族"},
 {id:22,name:"薇妮",source:"在地下城寻求邂逅",type:"龙娘",desc:"地下城19-24层稀有龙女（Vouivre）异端儿（Xenos），琥珀色眼银蓝色长发，额头有龙女之泪（红色宝石，价值连城），人形态罕见，与贝尔·克朗尼相遇",story:"在地下城寻求邂逅的地底深处的异端儿龙娘（Vouivre），银蓝长发琥珀色眼，额头嵌着价值连城的红色宝石「龙女之泪」。在地下城与贝尔相遇，是他第一个许下「想再见」的怪物朋友。作为拥有智性的异端儿，她渴望与人共存，却在身份暴露后被人类冒险者追猎，最终倒在贝尔怀中。她的死成为全作最沉重的转折，把贝尔与异端儿们推上共同寻求共存之路的命运。",images:["龙族/薇妮_1.jpg","龙族/薇妮_2.jpg","龙族/薇妮_3.jpg","龙族/22_1.jpg","龙族/22_2.jpg","龙族/22_3.jpg","龙族/22_4.png"],tags:["龙女"],race:"龙族",cv:""},
 {id:23,name:"布伦希尔德",source:"失落的龙约",type:"龙娘",desc:"栖息阿德拉火山的绯龙，性格如燃烧岩浆般暴躁，阿德拉火山喷发因其躁动魔力，数百年前只身迎击魔兽保护火山，与一名男子结下契约，火属性4星",story:"失落的龙约中栖息阿德拉火山的绯龙，性格如燃烧的岩浆般暴躁，其躁动魔力正是火山喷发的信号。数百年前魔兽来袭时，她只身迎击守住火山，也因此与一名男子结下契约。如今的她以契约之力与羁绊为炉，把暴烈炼成守护之焰——火属性4星，是火山地带最凶也最可靠的邻居。与那位男子的契约故事至今仍在火山地带流传——暴烈的龙，也会为羁绊收敛怒火。",images:["龙族/布伦希尔德_1.jpg"],tags:["绯龙"],race:"龙族",cv:""},
@@ -372,7 +409,7 @@ const DEFAULT_DATA = [
 {id:29,name:"艾拉",source:"复苏的魔女",type:"龙娘",desc:"即将迎来千岁生日的古老种族后裔，外表可爱小萝莉，在人类世界旅行上百年见多识广，平时人形态示人，真正生气时变回龙形态，UR级全能型，竞技场霸主，龙舞自带回血减伤",story:"复苏的魔女。奇洛拉世界蒙特尼亚公国的古老龙族后裔，即将迎来千岁生日。平时以人形小萝莉示人，在人类世界旅行上百年见多识广，唯独不愿在人前变回龙形态破坏形象。真正动怒时才展露真身：范围火焰吐息配合龙舞印记的每秒回血，攻守一体，让她成为竞技场里人称「全能UR霸主」的存在。千年将至的龙族后裔，把「保持可爱」当作比龙形态更重要的原则。",images:["龙族/艾拉_1.jpg"],tags:["萝莉"]},
 {id:30,name:"美露莘",source:"FGO",type:"龙娘",cv:"高野麻里佳",desc:"英国白龙阿尔比恩转生为妖精，摩根妖精骑士最强者，奥罗拉养女，帕西瓦尔养妹，可变形为飞行形态，第三技能变回原本模样释放龙之威压（对界宝具Hollowheart Albion）。妖精国不列颠圆桌骑士之一，获得泛人类史圆桌骑士·兰斯洛特灵基赐名的妖精骑士，在不列颠只是一种「龙」的妖精，被誉为妖精国最高贵、最美丽的妖精。",story:"FGO第二部六章。英国白龙阿尔比恩转生而成的妖精，摩根妖精骑士中最强者，称号妖精骑士兰斯洛特。奥罗拉养女、帕西瓦尔养妹，以甜美人形行走妖精国，可变形为飞行形态。第三技能解放真身时，天空将响起龙的威压——对界宝具「Hollowheart Albion」展开，便是她作为白龙的本来面目。妖精国崩坏的终局战中，她以白龙之姿划破长空。",images:["龙族/美露莘_1.jpg","龙族/美露莘_2.jpg","龙族/美露莘_3.jpg","龙族/美露莘_4.jpg","龙族/美露莘_5.jpg","龙族/メリュジーヌ满破.png","龙族/美露莘_6.jpg","龙族/美露莘_7.jpg","龙族/30_1.png","龙族/30_4.jpg"],tags:["妖精","FGO","阿尔比恩","白龙"],race:"龙族"},
 {id:31,name:"提亚马特（幼体）",source:"FGO",type:"真龙",cv:"悠木碧",desc:"古代美索不达米亚神话创世神，Beast II，身高160cm~7400万km²，天生没有死，只要地上还有活着的生命就不会消亡，少女体140cm/成人体160cm。",story:"FGO绝对魔兽战线的最终Boss，Beast II。美索不达米亚创世女神，因「被抛弃的神」之悲愿黑化，以黑泥之海覆盖生命——想让一切回归子宫，只因再没有生命需要母亲。天生没有死亡概念，只要地上还有活着的生命便不会消亡。少女体140cm与成人体160cm的极端反差，加上魔兽十一子的压制力，让第七特异点的最终决战成为人理史上最沉重的一页。最终被锁入虚空封印。",images:["龙族/提亚马特_2.jpg","龙族/提亚马特（幼体）_1.jpg","龙族/提亚马特（幼体）_2.jpg","龙族/31_2.jpg"],tags:["神","FGO"]},
-{id:32,name:"真红（Shinku）",source:"异环",type:"龙娘",cv:"唐夏芳",desc:"异象管理局收容二组，光属性S级主C，异能月夜红龙，生日8月13日，大招绯红之怒进入第二型态大幅增伤，残秒收招龙焰审判龙喷爆发。",story:"异环（NTE）异象管理局收容二组的光属性S级主C，龙族血脉，头顶龙角身带长尾，8月13日生日。大招「绯红之怒」进入第二型态大幅增伤，残秒收招「龙焰审判」以龙喷终结战场，异能「月夜红龙」。近战爆发、多次短距位移、大范围AOE，让她成为1.2版本深渊的常驻答案。从测试阶段到正式实装，这位龙娘主C用实力证明：龙族血脉，就是版本答案。",images:["龙族/真红_1.jpg"],tags:["月夜红龙"],race:"龙族"},
+{id:32,name:"真红（Shinku）",source:"异环",type:"龙娘",cv:"唐夏芳",birth:"8-13",desc:"异象管理局收容二组，光属性S级主C，异能月夜红龙，生日8月13日，大招绯红之怒进入第二型态大幅增伤，残秒收招龙焰审判龙喷爆发。",story:"异环（NTE）异象管理局收容二组的光属性S级主C，龙族血脉，头顶龙角身带长尾，8月13日生日。大招「绯红之怒」进入第二型态大幅增伤，残秒收招「龙焰审判」以龙喷终结战场，异能「月夜红龙」。近战爆发、多次短距位移、大范围AOE，让她成为1.2版本深渊的常驻答案。从测试阶段到正式实装，这位龙娘主C用实力证明：龙族血脉，就是版本答案。",images:["龙族/真红_1.jpg"],tags:["月夜红龙"],race:"龙族"},
 {id:33,name:"伊丽莎白·巴托里",source:"FGO",type:"龙娘",desc:"原型匈牙利血腥伯爵夫人，龙娘（无辜的怪物长龙角）「鲜血魔女」。粉红长发，龙角龙尾，自称吸血鬼伯爵。以毁灭性的歌声为武器的年轻魔王。",story:"FGO。原型匈牙利血腥伯爵夫人伊丽莎白·巴托里，因残虐传说被后人妖魔化而成的「无辜的怪物」——长出龙角龙尾的龙娘。坚信自己是天才偶像，高音域的音波与龙息是她的武器，万圣节年年强占活动舞台开演唱会。从铁血伯爵夫人到「超绝对偶像预备役」，这份跨越生死的自信，正是她最可爱的怪物之处。嗓门能震碎城墙的龙娘偶像，梦想是开一场让全人类都来听的演唱会。\n鲜血城堡的年轻歌姬魔王，音痴级歌声即是攻击手段；",images:["龙族/伊丽莎白_1.jpg","龙族/伊丽莎白_2.jpg","龙族/伊丽莎白_3.jpg","龙族/33_1.jpg","龙族/伊丽莎白·巴托里_20261027_125246.jpg"],tags:["FGO","歌姬","魔女","魔王"],star:false,race:"龙族",cv:""},
 {id:34,name:"法露特（黑龙骑士）",source:"影之诗",type:"龙娘",cv:"三泽纱千香",desc:"统领魔龙军首领，天空霸者，骑搭档黑龙驰骋战场，使用两把长矛，心高气傲但对强者给予敬意，认为公平对决战胜强者是无上荣耀，传说卡牌",story:"影之诗龙族传说卡，统领魔龙军的首领，号称天空霸者。与搭档黑龙心意相通，驰骋战场时双长矛所向披靡。心高气傲却对强者致以敬意——在她看来，公平对决中堂堂正正战胜强者，才是无上荣耀；偷袭与轻蔑都是对骑士之名的玷污，是龙职业中期压场的传说战力。骑上黑龙冲向天空的那一刻，她就是魔龙军仰望的旗帜。对强大的敬意与对胜利的执念，构成了这位黑龙骑士的全部骄傲。",images:["龙族/法露特_1.jpg","龙族/法露特_2.jpg"],tags:["骑士"]},
 {id:35,name:"龙之魔女·莉莉乌姆",source:"影之诗",type:"龙娘",cv:"钉宫理惠",desc:"悠久学园传说卡龙族，用牙爪火焰创造龙为其效力，终极形态召唤莉莉乌姆之龙（5/5突进），永火龙罪魁祸首之一。",story:"影之诗悠久学园的龙族传说卡。以牙爪与火焰创造眷属之龙为己效力，终极形态召唤「莉莉乌姆之龙」（5/5突进）踏平战场。被称为「永火」异变的罪魁祸首之一——龙之魔女的火焰烧到哪里，哪里的命运就开始燃烧；她的卡面与语音里，藏着影之诗龙族最危险也最华丽的传说。在她的学园传说里，被龙之魔女盯上的人，连求饶都要先排队。",images:["龙族/莉莉乌姆_1.jpg"],tags:["魔女","钉宫"]},
@@ -404,8 +441,8 @@ const DEFAULT_DATA = [
 {id:61,name:"黍",source:"明日方舟",type:"龙娘",desc:"岁家第六子，炎国农业天师，限定寻访春节限定干员，权柄农耕，与年/夕/令等同为岁兽十二碎片，龙形态与令的龙长得比较像",story:"明日方舟岁家第六子，炎国农业天师，春节限定干员。与年、夕、令同出岁兽十二碎片，执掌的权柄是「农耕」——春种秋收、水利土壤皆在她掌中，龙形态与令的龙长得有几分相似。别的兄弟姐妹或铸剑或作画，她选择守着田垄：春种一粒粟，岁兽在看。对黎民来说，这位天师比任何神明都更接近人间烟火。风调雨顺的年份，记得去田垄边看看——那位金发龙角的姑娘，正在看麦浪。",images:["龙族/黍_1.jpg","龙族/黍_2.jpg","龙族/61_4.jpg"],tags:["明日方舟","巨兽"],race:"龙族",cv:""},
 {id:62,name:"贝拉（贝纳勒斯）",source:"崩坏3",type:"龙娘",desc:"第二文明纪元第二律者空之律者西琳的伴生审判级龙型崩坏兽，第二次崩坏中被西琳制造，被赐予征服宝石能力，拥有冰火雷暗四块核心，能操纵天气，昵称贝拉/贝贝龙",story:"崩坏3。第二文明纪元第二律者「空之律者」西琳以权能创造的伴生审判级龙型崩坏兽，被赐予征服宝石，握有冰火雷暗四块核心、可操纵天气。对西琳而言，贝拉是孤独女王唯一的「家人」，昵称「贝贝龙」背后是末世里仅存的温情；对世界而言，她是第二次崩坏里遮天蔽日的灾厄。西琳陨落后，征服宝石与她遗留的力量成为后续主线的重要伏笔。龙型崩坏兽也有心——她对西琳的忠诚，是崩坏世界里罕见的纯粹情感。",images:["龙族/贝拉_1.jpg","龙族/62_1.jpg"],tags:["崩坏兽"],race:"龙族",cv:""},
 {id:63,name:"帆稀",source:"公主连结",type:"龙娘",cv:"大西沙织",desc:"全名远野帆稀，龙族据点公会会长，外号「龙妈」。日服FES限定（国服2023年10月实装），雷厉风行的会长，私下是黑客+连载漫画家。",story:"公主连结Re:Dive角色，全名远野帆稀，龙族据点公会会长，玩家间外号「龙妈」。日服以FES限定实装（国服2023年10月），白天的她是雷厉风行的会长，私下还是身手不俗的黑客与连载漫画家。把公会成员当家人罩着——龙族据点的屋檐下，没有流浪的龙。会长室里通宵赶稿的漫画家，正是战场上令敌人闻风丧胆的龙族大姐头。",images:["龙族/帆稀_1.jpg","龙族/帆稀_2.jpg","龙族/帆稀_3.jpg"],tags:["公主连结","龙妈"],race:"龙族"},
-{id:64,name:"琳德",source:"公主连结",type:"龙娘",cv:"关根明良",desc:"公主连结Re:Dive角色，与妹妹维尔姆原本是虚拟世界数字生命NPC，为来到现实世界姐妹共同寄宿于同一机械义体实现逆向登录，12岁身高145cm，2月5日生日水瓶座，趣味与妹妹过假日。",story:"公主连结Re:Dive。与妹妹维尔姆原是虚拟世界的数字生命NPC，为来到现实世界，姐妹以「逆向登录」的方式共同寄宿于同一台机械义体——一台身体、两个灵魂。12岁、145cm、2月5日生水瓶座，趣味是和妹妹过假日。白天是乖乖的少女，灵魂里住着两个人的日常，是公主连结最特别的双子设定。用一台身体的预算，过出两个人的热闹——琳德的日常，比谁都拥挤，也比谁都温暖。",images:["龙族/琳德_1.jpg","龙族/琳德_2.jpg","龙族/琳德_3.jpg"],tags:["公主连结","姐妹","女仆"],race:"龙族"},
-{id:65,name:"维尔姆",source:"公主连结",type:"龙娘",cv:"关根明良",desc:"公主连结Re:Dive限定角色，★3后卫魔法攻击，Debuffer，龙族，25岁4月17日生日牡羊座O型，所属龙巢，趣味绘画读书，与姐姐琳德共同寄宿同一机械义体逆向登录现实世界，连结爆发降敌魔法防御但偶尔偷懒。",story:"公主连结Re:Dive限定角色，琳德的妹妹——姐妹原是虚拟世界的数字生命NPC，为实现「逆向登录」共同寄宿于同一台机械义体。25岁、4月17日生牡羊座O型，★3后卫魔法Debuffer，所属龙巢，趣味绘画读书。连结爆发降低敌人魔法防御，偶尔偷懒摸鱼——但姐妹同体的默契从不出错。一人身两魂的设定之下，是「姐妹永不分离」这句最朴素的誓言。",images:["龙族/维尔姆_1.jpg"],tags:["公主连结","姐妹","女仆"],race:"龙族"},
+{id:64,name:"琳德",source:"公主连结",type:"龙娘",cv:"关根明良",birth:"2-5",desc:"公主连结Re:Dive角色，与妹妹维尔姆原本是虚拟世界数字生命NPC，为来到现实世界姐妹共同寄宿于同一机械义体实现逆向登录，12岁身高145cm，2月5日生日水瓶座，趣味与妹妹过假日。",story:"公主连结Re:Dive。与妹妹维尔姆原是虚拟世界的数字生命NPC，为来到现实世界，姐妹以「逆向登录」的方式共同寄宿于同一台机械义体——一台身体、两个灵魂。12岁、145cm、2月5日生水瓶座，趣味是和妹妹过假日。白天是乖乖的少女，灵魂里住着两个人的日常，是公主连结最特别的双子设定。用一台身体的预算，过出两个人的热闹——琳德的日常，比谁都拥挤，也比谁都温暖。",images:["龙族/琳德_1.jpg","龙族/琳德_2.jpg","龙族/琳德_3.jpg"],tags:["公主连结","姐妹","女仆"],race:"龙族"},
+{id:65,name:"维尔姆",source:"公主连结",type:"龙娘",cv:"关根明良",birth:"4-17",desc:"公主连结Re:Dive限定角色，★3后卫魔法攻击，Debuffer，龙族，25岁4月17日生日牡羊座O型，所属龙巢，趣味绘画读书，与姐姐琳德共同寄宿同一机械义体逆向登录现实世界，连结爆发降敌魔法防御但偶尔偷懒。",story:"公主连结Re:Dive限定角色，琳德的妹妹——姐妹原是虚拟世界的数字生命NPC，为实现「逆向登录」共同寄宿于同一台机械义体。25岁、4月17日生牡羊座O型，★3后卫魔法Debuffer，所属龙巢，趣味绘画读书。连结爆发降低敌人魔法防御，偶尔偷懒摸鱼——但姐妹同体的默契从不出错。一人身两魂的设定之下，是「姐妹永不分离」这句最朴素的誓言。",images:["龙族/维尔姆_1.jpg"],tags:["公主连结","姐妹","女仆"],race:"龙族"},
 {id:66,name:"古月娜",source:"斗罗大陆3龙王传说",type:"真龙",desc:"龙神创生神格所化银龙王，魂兽共主，唐舞麟之妻、蓝轩宇生母，三形态（本体银龙王/古月主人格/娜儿附属人格）后融合，银发紫眸斗罗大陆第一女神，武器白银龙枪金龙逆鳞龙神之心天圣裂渊戟，武魂融合技龙神变",story:"斗罗大陆3龙王传说。龙神创生神格所化的银龙王，魂兽共主。以「古月」「娜儿」双重人格行走人间，在史莱克学院与唐舞麟相识相爱，武魂融合技「龙神变」是两人命运的锚点。白银龙枪、金龙逆鳞、龙神之心与天圣裂渊戟，三形态最终归一——斗罗大陆第一女神，为爱人与魂兽两个世界的存续下注了一切。从魂兽共主到为人妻母，银龙王的每一次抉择，都改写了斗罗大陆的命运。",images:["龙族/古月娜_3.jpg","龙族/古月娜_1.jpg","龙族/古月娜_2.jpg","龙族/古月娜_4.webp"],tags:["神","银龙","一体双魂"],race:"龙族",cv:""},
 {id:67,name:"夭夭",source:"元尊",type:"龙娘",desc:"元尊女主角，祖龙意志孕育之女，天地间「第三序列之神」，先天精神力冠绝诸天。受黑帝苍渊之托随周元修行，守护兽吞吞（祖饕圣源兽），中配醋醋",story:"元尊女主角。祖龙意志孕育之女，天地间「第三序列之神」，先天精神力冠绝诸天。受黑帝苍渊之托随周元修行，一路以近乎全知的视野指引其成长，性情冷漠至极，唯独对周元露出温柔。她的身世与祖龙留下的后手纠缠至深，周元踏遍诸天寻找祖龙血肉，只为让她真正「活」过来——天地棋局中最静、也最重的一子。当第三序列之神露出笑容时，连诸天的法则都会为之让路。",images:["龙族/夭夭_1.jpg","龙族/夭夭_2.jpg"],tags:["神","元尊","第三序列之神"],race:"龙族",cv:""},
 {id:68,name:"紫妍",source:"斗破苍穹",type:"真龙",desc:"《斗破苍穹》太虚古龙，吸收龙凰本源果后进化为龙凰（天凰之翼+古龙之体），魔兽界至尊，一统分裂太虚古龙族成为新龙皇，天赋蛮力惊人，短时间可变成人大小提升至巅峰，修为从斗宗巅峰飙升至斗圣",story:"斗破苍穹太虚古龙族的小姑娘，天赋蛮力惊人，短时间可化作人形。彼时太虚古龙族四分五裂，她吞服龙凰本源果进化为「龙凰」，生出天凰之翼与古龙之体，登顶魔兽界至尊，随后一统分裂的族群成为新龙皇，修为从斗宗巅峰一路飙至斗圣。与萧炎情同兄妹，是斗气大陆上最可靠的「小祖宗」。从小跟在萧炎身边蹭吃蹭喝的小尾巴，转眼已是魔兽界说一不二的龙皇。",images:["龙族/紫妍_1.jpg"],tags:["龙皇","龙凰"],race:"龙族",cv:""},
@@ -431,13 +468,13 @@ const DEFAULT_DATA = [
 {id:88,name:"玖兰优姬",source:"吸血鬼骑士",type:"吸血鬼",cv:"堀江由衣",race:"吸血鬼",desc:"本作女主，152cm。对外是黑主理事长养女/风纪委员，实际是玖兰家纯血Level A爱女、玖兰枢的妹妹兼未婚妻。人类时期棕发及肩，觉醒后棕长及腰卷发、血红瞳。武器狩猎女神Artemis（可伸缩金属棍，觉醒后变镰刀状）。",story:"母亲树里以命封印其吸血鬼记忆使其作为人类成长；后觉醒恢复纯血身份。",images:["吸血鬼/18_玖兰优姬.jpg"],tags:["纯血种"]},
 {id:89,name:"红玛利亚",source:"吸血鬼骑士",type:"吸血鬼",cv:"名冢佳织",race:"吸血鬼",desc:"被纯血种绯樱闲附身的贵族少女。",story:"绯樱闲借其身体潜入黑主学园接近锥生零；事件平息后，本性温柔的她与优姬等人结下友谊，回归平静的日常。",images:["吸血鬼/19_红玛利亚.jpg"],tags:["附身"],star:false},
 {id:90,name:"玖兰树里",source:"吸血鬼骑士",type:"吸血鬼",cv:"国府田麻理子",race:"吸血鬼",desc:"玖兰优姬与玖兰枢的母亲，纯血种。褐色长发、深红眼眸，性格温柔坚韧，拥有强大咒术能力；与丈夫玖兰悠为亲生兄妹（玖兰族为保纯血血脉常行兄妹通婚）。为保护优姬不被玖兰李土抓走，以自己生命封印优姬作为吸血鬼的全部能力与记忆。",story:"十年前以自己的生命为代价封印优姬的吸血鬼能力与记忆；同年丈夫玖兰悠为保护优姬死于玖兰李土之手——夫妇二人的牺牲，换来了女儿十年的平静。",images:["吸血鬼/20_玖兰树里.jpg"],tags:["纯血种"]},
-{id:91,name:"爱尔梅希尔德·卡恩斯坦",source:"恶魔高校D×D",type:"吸血鬼",race:"吸血鬼",desc:"卡蜜拉派（女性主导派阀）上级纯血吸血鬼贵族，150cm/42kg，8月28日生，金发白肤红眼，洋娃娃般可爱外表，性格高傲，歧视不纯血者。阳光直射时能力大幅下降。",story:"以和平协议为筹码要求莉雅丝提供加斯帕协助；后被兵藤一诚所救，喜欢上一诚并主动要求成为其眷属。",images:["吸血鬼/21_爱尔梅希尔德.jpg"],tags:["大小姐"],cv:""},
+{id:91,name:"爱尔梅希尔德·卡恩斯坦",source:"恶魔高校D×D",type:"吸血鬼",race:"吸血鬼",birth:"8-28",desc:"卡蜜拉派（女性主导派阀）上级纯血吸血鬼贵族，150cm/42kg，8月28日生，金发白肤红眼，洋娃娃般可爱外表，性格高傲，歧视不纯血者。阳光直射时能力大幅下降。",story:"以和平协议为筹码要求莉雅丝提供加斯帕协助；后被兵藤一诚所救，喜欢上一诚并主动要求成为其眷属。",images:["吸血鬼/21_爱尔梅希尔德.jpg"],tags:["大小姐"],cv:""},
 {id:92,name:"瓦雷莉·采佩什",source:"恶魔高校D×D",type:"吸血鬼",race:"吸血鬼",desc:"吸血鬼与人类混血美女，神灭具「幽世的圣杯」（三圣杯一套）持有者，加斯帕·弗拉迪的恩人。",story:"圣杯被兄长马利乌斯夺走用于强化采佩什派吸血鬼，本人昏迷；后被真圣杯碎片唤醒，邪龙战役后夺回圣杯复原；此后作为吉蒙里战队主教参加国际大赛，运用圣杯实施即时战场治疗。",images:["吸血鬼/22_瓦雷莉.jpg"],tags:["圣杯","混血"]},
 {id:93,name:"蕾米莉亚·斯卡蕾特",source:"东方Project",type:"吸血鬼",race:"吸血鬼",desc:"活了500多年的吸血鬼，红魔馆主人，芙兰朵露的姐姐与监护人。淡蓝短发红瞳，背后巨大蝙蝠翼，身材如10-14岁少女。能力「操纵命运程度」，惧怕阳光出门必撑阳伞。原作官方游戏无固定CV，同人作品配音各异。",story:"红魔馆之主，红雾异变的元凶；与十六夜咲夜、红美铃、帕秋莉同居红魔馆。",images:["吸血鬼/蕾米莉亚·斯卡蕾特_1.jpg","吸血鬼/23_蕾米莉亚.jpg","吸血鬼/蕾米莉亚·斯卡蕾特_2.jpg","吸血鬼/蕾米莉亚·斯卡蕾特_3.jpg","吸血鬼/93_2.jpg","吸血鬼/93_3.jpg","吸血鬼/204_2.jpg"],tags:["大小姐","红魔馆"]},
 {id:94,name:"芙兰朵露·斯卡蕾特",source:"东方Project",type:"吸血鬼",race:"吸血鬼",desc:"蕾米莉亚的妹妹，约495岁。金发金瞳幼女，头上带红色水晶翼饰。能力「破坏一切事物程度」，因暴走被长期禁足在红魔馆地下，鲜少外出。，CV=原作无官方CV（衍生作品配音：金元寿子、小仓唯等）",story:"东方红魔乡EXTRA BOSS，首次在红魔馆地下室被灵梦/魔理沙打倒后才得以外出。",images:["吸血鬼/芙兰朵露·斯卡蕾特_1.jpg","吸血鬼/芙兰朵露·斯卡蕾特_2.jpg","吸血鬼/芙兰朵露·斯卡蕾特_3.jpg","吸血鬼/芙兰朵露·斯卡蕾特_4.jpg","吸血鬼/芙兰朵露·斯卡蕾特_5.jpg","吸血鬼/94_2.png","吸血鬼/94_4.jpg"],tags:["妹妹"],cv:""},
 {id:95,name:"爱尔奎特·布伦史塔德",source:"月姬",type:"吸血鬼",cv:"长谷川育美（Remake/MELTY BLOOD/FGO）",race:"吸血鬼",desc:"167cm/52kg，B88/W55/H85。金发红瞳，真祖王族最后的公主，为狩猎堕落真祖而被人造出的「最强真祖」。不必吸血也不畏阳光，能力为「空想具现化」。性格天真傻气带点任性，旧版（MELTY BLOOD系列）为柚木凉香。",story:"800年间为消灭罗亚多次觉醒，平时沉睡千年城；被远野志贵杀死一次后实力弱化，转而要求其协助狩猎罗亚。",images:["吸血鬼/25_爱尔奎特.jpg"],tags:["真祖","空想具现化","公主"]},
 {id:96,name:"索菲·特瓦伊莱特",source:"隔壁的吸血鬼小妹",type:"吸血鬼",cv:"富田美忧",race:"吸血鬼",desc:"1651年生，360余岁。浅银白长发紫瞳美少女，哥特黑裙。超现代化死宅吸血鬼：网购血液、追新番打游戏、棺材里塞美少女抱枕，不袭击人类反而怕人。",story:"夜晚散步时捡到迷路的天野灯，从此与灯及好友们过上日常同居喜剧。",images:["吸血鬼/26_索菲.jpg","吸血鬼/96_1.png","吸血鬼/96_2.jpg","吸血鬼/96_3.jpg","吸血鬼/96_4.jpg"],tags:["哥特"]},
-{id:97,name:"千堂瑛里华",source:"赤色的约定/FORTUNE ARTERIAL",type:"吸血鬼",cv:"神田理江（动画）/观村咲子（游戏）",race:"吸血鬼",desc:"160cm，金发碧眼，6月7日生B型。修智学院学生会副会长，学院人气第一的完美少女，文武双全，好奇心旺盛行动力过剩。真实身份为吸血鬼，但厌恶吸人血。",story:"身为「夜之一族」的吸血鬼，为防力量暴走而服用特殊药物抑制，与学园长及东仪家共同生活；在修智学院以学生会副会长身份活动。",images:["吸血鬼/27_千堂瑛里华.jpg"],tags:["学生会","夜之一族"]},
+{id:97,name:"千堂瑛里华",source:"赤色的约定/FORTUNE ARTERIAL",type:"吸血鬼",cv:"神田理江（动画）/观村咲子（游戏）",race:"吸血鬼",birth:"6-7",desc:"160cm，金发碧眼，6月7日生B型。修智学院学生会副会长，学院人气第一的完美少女，文武双全，好奇心旺盛行动力过剩。真实身份为吸血鬼，但厌恶吸人血。",story:"身为「夜之一族」的吸血鬼，为防力量暴走而服用特殊药物抑制，与学园长及东仪家共同生活；在修智学院以学生会副会长身份活动。",images:["吸血鬼/27_千堂瑛里华.jpg"],tags:["学生会","夜之一族"]},
 {id:98,name:"赤夜萌香",source:"十字架与吸血鬼",type:"吸血鬼",cv:"水树奈奈",race:"吸血鬼",desc:"阳海学园美少女，表里双人格：表萌香粉长发温柔学霸；摘下发际十字架后切换为里萌香——银发红瞳身材成长（G罩杯90-58-88），「力量的大妖」等级吸血鬼。",story:"喜欢第一次直接吸血的青野月音；因表人格温柔想交朋友，里人格凶暴，靠十字架封印人格切换。",images:["吸血鬼/28_赤夜萌香.jpg"],tags:["双重人格","大妖"]},
 {id:99,name:"忍野忍",source:"化物语/伤物语",type:"吸血鬼",cv:"坂本真绫（动画）/平野绫（广播剧）",race:"吸血鬼",desc:"本名姬丝秀忒·雅赛劳拉莉昂·刃下心，活了598年的传说Kissshot。全盛期182cm金发红瞳御姐，被夺力量后沦为8岁金发金瞳萝莉，肌肤白皙、无影子无实体。",story:"四百年间一直在寻找自己的死地；被阿良良木历救下后眷属化，从此寄居历的影子里。",images:["吸血鬼/29_忍野忍.jpg","吸血鬼/99_3.jpg","吸血鬼/99_4.png"],tags:["萝莉","御姐"]},
 {id:100,name:"黎榭莉亚·雷·克里斯塔利亚",source:"圣剑学院的魔剑使",type:"吸血鬼",cv:"石川由依（动画）/东山奈央（游戏）",race:"吸血鬼",desc:"15岁，克里斯塔利亚公爵家千金，圣剑学院第十八小队队长。为救雷欧尼斯而丧命，被复活成最上位不死者「吸血鬼女王」。",story:"探索死都遗迹时唤醒沉睡的雷欧，后以其监视者兼未婚妻身份共同战斗。",images:["吸血鬼/100_2.jpg","吸血鬼/30_黎榭莉亚.jpg","吸血鬼/100_1.jpg","吸血鬼/100_3.jpg","吸血鬼/100_4.jpg"],tags:["吸血鬼女王"]},
@@ -449,9 +486,9 @@ const DEFAULT_DATA = [
 {id:106,name:"伊丽莎白",source:"想要成为影之实力者！",type:"吸血鬼",cv:"早见沙织",race:"吸血鬼",desc:"「血之女王」异名的吸血鬼始祖，红发黑裙哥特御姐；约千年前毁灭数国后据传已消亡，其部下克利姆森在无法都市暗跃。",story:"心脏用肉体容器复活后被奥萝拉附身的克蕾娅击退，后遭暗影击败；事后与梅丽一同踏上旅程寻找「安息之地」。",images:["吸血鬼/36_伊丽莎白.jpg"],tags:["血之女王","哥特","始祖"]},
 {id:107,name:"梅丽",source:"想要成为影之实力者！",type:"吸血鬼",cv:"加隈亚衣",race:"吸血鬼",desc:"曾经的吸血鬼真祖。千年前是伊丽莎白的部下，身为吸血鬼却以「吸血鬼猎人」身份行动，与血之暴走、赤之塔有关。",story:"千年前作为伊丽莎白的部下活动，与伊丽莎白结伴踏上寻找「安息之地」的旅程。",images:["吸血鬼/0b55b319ebc4b74543a9b0287da009178a82b901bfc3.webp"],tags:["真祖","吸血鬼猎人"]},
 {id:108,name:"露露西·露",source:"异世界悠闲农家",type:"吸血鬼",cv:"下地紫野",race:"吸血鬼",desc:"数百岁银发长发吸血姬，能自由改变身体大小（年龄），擅长魔法能飞，喜欢番茄。",story:"在森林里与村主火乐相遇后共同生活，成为村长夫人；能自由改变身体大小（外表年龄）的她，常以幼女或成人形态穿梭于村里的日常，是村中最有仙气的住户。",images:["吸血鬼/38_露露西.jpg","吸血鬼/14_1.jpg"],tags:[]},
-{id:109,name:"真红杏树",source:"增血鬼果林",type:"吸血鬼",cv:"猪口有佳（动画）/下屋则子（游戏）",race:"吸血鬼",desc:"真红家幺女，果林的妹妹（1992年6月6日生）。银白长卷发哥特黑裙，金瞳，端庄优雅的吸血鬼美少女。",story:"真红家的小女儿，与姐姐果林、哥哥真红炼一起在人间过着伪装的普通人生活。",images:["吸血鬼/39_真红杏树.jpg"],tags:["妹妹","哥特"]},
+{id:109,name:"真红杏树",source:"增血鬼果林",type:"吸血鬼",cv:"猪口有佳（动画）/下屋则子（游戏）",race:"吸血鬼",birth:"6-6",desc:"真红家幺女，果林的妹妹（1992年6月6日生）。银白长卷发哥特黑裙，金瞳，端庄优雅的吸血鬼美少女。",story:"真红家的小女儿，与姐姐果林、哥哥真红炼一起在人间过着伪装的普通人生活。",images:["吸血鬼/39_真红杏树.jpg"],tags:["妹妹","哥特"]},
 {id:110,name:"桐敷沙子",source:"尸鬼",type:"吸血鬼",cv:"大浦冬华",race:"吸血鬼",desc:"外表13岁哥特萝莉，黑/深紫波浪长发齐刘海，暗红空洞大眼，脸色苍白洋娃娃般脸庞，常穿繁复蕾丝哥特洋装。实际是尸鬼宗主，活了极长岁月。",story:"自称患SLE不能晒太阳，实为兼正洋房尸鬼一家的宗主；喜欢结城夏野的小说，夜里穿蕾丝裙独自活动；最终被村人识破存在。",images:["吸血鬼/40_桐敷沙子.jpg"],tags:["尸鬼","哥特","萝莉"]},
-{id:111,name:"华法琳",source:"明日方舟",type:"吸血鬼",cv:"石见舞菜香（日）/格林（中）",race:"吸血鬼",desc:"157cm，银发尖耳赤瞳，6月27日生，出身卡兹戴尔。罗德岛元老医疗部门话事人，血液学专科医生，疯狂研究员。",story:"萨卡兹血魔分支原型为吸血鬼，能操控血液、把血炼成宝石；被其他干员用来吓唬不听话的小孩。",images:["吸血鬼/41_华法琳.jpg","吸血鬼/111_1.jpg","吸血鬼/111_2.jpg","吸血鬼/111_3.jpg"],tags:["医生"]},
+{id:111,name:"华法琳",source:"明日方舟",type:"吸血鬼",cv:"石见舞菜香（日）/格林（中）",race:"吸血鬼",birth:"6-27",desc:"157cm，银发尖耳赤瞳，6月27日生，出身卡兹戴尔。罗德岛元老医疗部门话事人，血液学专科医生，疯狂研究员。",story:"萨卡兹血魔分支原型为吸血鬼，能操控血液、把血炼成宝石；被其他干员用来吓唬不听话的小孩。",images:["吸血鬼/41_华法琳.jpg","吸血鬼/111_1.jpg","吸血鬼/111_2.jpg","吸血鬼/111_3.jpg"],tags:["医生"]},
 {id:112,name:"莉萝·艾",source:"Bloodline 血族",type:"吸血鬼",cv:"山新（中）",race:"吸血鬼",desc:"1510年生，158cm，B77/W55/H78，白发红瞳双马尾萝莉，外号「纯白恶魔」。血族最后的元老拉斯特之女。",story:"北极圈与圣地决战后流浪人间寻父；与夜壬同居黑塔帮其学习魔法；被战争姬念刃打伤后觉醒新异能。",images:["吸血鬼/42_莉萝艾.jpg"],tags:["萝莉","纯白恶魔"]},
 {id:113,name:"高城千砂",source:"羊之歌",type:"吸血鬼",cv:"林原惠",race:"吸血鬼",desc:"黑长直和服少女，高城家继承家族「吸血病」的悲剧女主。",story:"弟弟高城一砂患有高城家遗传的嗜血怪病返乡后，姐弟在宿命与病痛中相互依存，文艺致郁向悲剧。",images:["吸血鬼/43_高城千砂.jpg"],tags:["和服"]},
 {id:114,name:"叶月",source:"月咏-MOON PHASE-",type:"吸血鬼",cv:"斋藤千和",race:"吸血鬼",desc:"紫发尖耳猫耳吸血鬼少女，初源吸血鬼伯爵之女。被社会隔绝长大，性格要强任性根上却是怕寂寞。",story:"为吸血找上摄影师森丘耕平，后相恋，从此随他在城市生活。",images:["吸血鬼/44_叶月.jpg"],tags:["猫娘"]},
@@ -558,7 +595,7 @@ const DEFAULT_DATA = [
 {id:219,name:"阿尔萨斯",source:"碧蓝航线",type:"机械少女",cv:"丰崎爱生",race:"机娘",desc:"银白色长发紫瞳，白蓝配色短裙黑丝，手持巨戟。自由鸢尾阵营战列舰，原型为法国阿尔萨斯级战列舰方案（黎塞留级改进型）",story:"以法国未曾建成的超级战列舰方案为原型实装，是自由鸢尾阵营的重火力旗舰。机械龙背景的立绘展现其强大火力与优雅气质。",images:["机娘/阿尔萨斯_2.jpg","机娘/阿尔萨斯_1.jpg"],tags:["舰娘"]},
 {id:220,name:"岛风",source:"舰队Collection",type:"机械少女",cv:"佐仓绫音",race:"机娘",desc:"灰发兔耳发饰的驱逐舰娘。岛风型驱逐舰一番舰，装备3座五连装93式氧气鱼雷发射管，以40节以上航速著称的「高速重雷装」驱逐舰。",story:"作为舰C最具代表性的驱逐舰娘之一活跃于出击与演习；其「连装砲君」搭载与高速雷击的战斗风格是玩家熟知的招牌。",images:["机娘/57_岛风.jpg","机娘/220_2.png","机娘/220_3.png","机娘/220_4.jpg"],tags:["舰娘"]},
 {id:221,name:"大和",source:"舰队Collection",type:"机械少女",cv:"竹达彩奈",race:"机娘",desc:"黑色长直发的战列舰娘。大和型战列舰一番舰，以史上最大战列舰为原型，游戏中是需要大量资源才能建造的最强级战列舰。",story:"作为镇守府压轴级的最强战列舰活跃于决战海域；46cm主炮的压倒性火力是她的标志。",images:["机娘/58_大和.jpg"],tags:["舰娘"]},
-{id:222,name:"初音未来",source:"VOCALOID",type:"AI",cv:"藤田咲（声源提供）",race:"机娘",desc:"青绿色超长双马尾、灰绿瞳，标志性灰绿歌姬服配耳机与臂套。Crypton Future Media以Yamaha VOCALOID2引擎开发的电子歌姬，2007年8月31日发售，电子歌姬元祖级角色。",story:"发售即引爆全球创作热潮，从《甩葱歌》到演唱会全息投影，成为虚拟歌手文化的代名词；无数P主用她的声音创作歌曲，形成跨越近二十年的创作生态。",images:["机娘/初音未来_1.jpg","机娘/初音未来_2.jpg","机娘/初音未来_3.jpg","机娘/初音未来_4.jpg","机娘/初音未来_5.jpg","机娘/204_1.jpg"],tags:["歌姬","双马尾"]},
+{id:222,name:"初音未来",source:"VOCALOID",type:"AI",cv:"藤田咲（声源提供）",race:"机娘",birth:"8-31",desc:"青绿色超长双马尾、灰绿瞳，标志性灰绿歌姬服配耳机与臂套。Crypton Future Media以Yamaha VOCALOID2引擎开发的电子歌姬，2007年8月31日发售，电子歌姬元祖级角色。",story:"发售即引爆全球创作热潮，从《甩葱歌》到演唱会全息投影，成为虚拟歌手文化的代名词；无数P主用她的声音创作歌曲，形成跨越近二十年的创作生态。",images:["机娘/初音未来_1.jpg","机娘/初音未来_2.jpg","机娘/初音未来_3.jpg","机娘/初音未来_4.jpg","机娘/初音未来_5.jpg","机娘/204_1.jpg"],tags:["歌姬","双马尾"]},
 {id:223,name:"巡音流歌",source:"VOCALOID",type:"AI",cv:"浅川悠（声源提供）",race:"机娘",desc:"粉色长发、蓝瞳，黑色短裙配金色长围巾与发髻网套。Crypton以VOCALOID2引擎开发的日语/英语双语音库角色，2009年1月30日发售，与初音未来同属角色主唱系列。",story:"以御姐气质与双语能力在虚拟歌姬中独树一帜，代表作如《Luka Luka★Night Fever》等至今传唱，常与初音未来同台演出。",images:["机娘/60_巡音流歌.jpg","机娘/巡音流歌_1.jpg","机娘/巡音流歌_2.jpg","机娘/巡音流歌_3.jpg"],tags:["御姐","歌姬"]},
 {id:224,name:"洛天依",source:"VOCALOID中文",type:"AI",cv:"山新（声源提供）",race:"机娘",desc:"灰蓝发碧绿瞳，白色发髻配碧色发饰，中式元素服装。上海禾念以VOCALOID3引擎开发的中文虚拟歌姬，2012年7月12日出道，中文虚拟歌手的代表性角色。",story:"从B站跨年晚会到万人演唱会，洛天依见证了中文VOCALOID文化的兴起；《普通DISCO》《达拉崩吧》等曲目让她出圈成为国民级虚拟歌手。",images:["机娘/洛天依_1.jpg","机娘/洛天依_2.jpg","机娘/洛天依_3.jpg","机娘/洛天依_4.jpg","机娘/洛天依_5.jpg","机娘/洛天依_6.jpg","机娘/224_2.jpg","机娘/224_3.jpg","机娘/224_4.jpg"],tags:["吃货","歌姬"]},
 {id:225,name:"时乃空",source:"hololive",type:"AI",cv:"时乃空（本人）",race:"机娘",desc:"棕橙色长发蓝瞳，白色圆顶帽与蓝白偶像风连衣裙。hololive零期生（创始首位成员，2017年出道），被称作「sora大人」，是hololive梦想的起点。",story:"从零开始直播到hololive成为全球最大VTuber团体，作为大姐姐见证了所有后辈的成长；出道周年纪念LIVE是粉丝心中的经典。",images:["机娘/62_时乃空.jpg","机娘/225_4.jpg"],tags:["VTuber","hololive"]},
@@ -628,7 +665,7 @@ const DEFAULT_DATA = [
 
 // ===== 状态 =====
 // 版本号：每次HTML更新后改一下，自动清掉浏览器旧数据
-const DATA_VERSION = '20261029-v41';
+const DATA_VERSION = '20261029-v42';
 if(localStorage.getItem('dg_version') !== DATA_VERSION){
   localStorage.removeItem('dg_data');
   localStorage.setItem('dg_version', DATA_VERSION);
@@ -692,6 +729,102 @@ if(!isServerMode()){
 }
 function saveHistory(){localStorage.setItem('dg_history', JSON.stringify(history.slice(-20)))}
 
+// ===== 生日功能 =====
+// birth 字段格式："M-D"（月-日，如 "8-13"）；无 birth 字段 = 无官方生日数据
+function birthParts(c){
+  if(!c.birth) return null;
+  const m = String(c.birth).match(/^(\d{1,2})-(\d{1,2})$/);
+  if(!m) return null;
+  const mo=+m[1], d=+m[2];
+  if(mo<1||mo>12||d<1||d>31) return null;
+  return {m:mo, d:d};
+}
+function isBdayToday(c){
+  const p=birthParts(c); if(!p) return false;
+  const n=new Date();
+  return p.m===n.getMonth()+1 && p.d===n.getDate();
+}
+function fmtBirth(c){ const p=birthParts(c); return p?`${p.m}月${p.d}日`:''; }
+// 搜索词 → 生日匹配条件；返回 null 表示不是生日关键词
+// 支持：8月 / 8-13 / 8月13日 / 8月13 / 0813
+function parseBirthQuery(q){
+  q=String(q||'').trim().toLowerCase();
+  let m=q.match(/^(\d{1,2})月$/);
+  if(m) return {m:+m[1], d:null};
+  m=q.match(/^(\d{1,2})月(\d{1,2})日?$/);
+  if(m) return {m:+m[1], d:+m[2]};
+  m=q.match(/^(\d{1,2})-(\d{1,2})$/);
+  if(m) return {m:+m[1], d:+m[2]};
+  m=q.match(/^(\d{2})(\d{2})$/); // 4位数字如 0813 → 8月13日
+  if(m){
+    const mo=+m[1], d=+m[2];
+    if(mo>=1&&mo<=12&&d>=1&&d<=31) return {m:mo, d:d};
+  }
+  return null;
+}
+function birthMatch(c, bk){
+  if(!bk) return false;
+  const p=birthParts(c); if(!p) return false;
+  if(bk.d===null) return p.m===bk.m;
+  return p.m===bk.m && p.d===bk.d;
+}
+// 生日横幅：当月有生日角色才显示；今天有生日角色时置顶加粗
+function updateBdayBanner(){
+  const el=document.getElementById('bdayBanner');
+  if(!el) return;
+  const n=new Date();
+  const cm=n.getMonth()+1;
+  const monthChars=data.filter(c=>{const p=birthParts(c);return p&&p.m===cm})
+    .sort((a,b)=>birthParts(a).d-birthParts(b).d);
+  if(!monthChars.length){ el.style.display='none'; el.innerHTML=''; return; }
+  const todays=monthChars.filter(c=>isBdayToday(c));
+  const names=monthChars.map(c=>{const p=birthParts(c);return `${c.name}(${p.m}.${p.d})`}).join(' · ');
+  let head;
+  if(todays.length){
+    head=`<span class="bb-today">🎂 今天是${todays.map(c=>c.name).join('、')}的生日！</span><span>（本月共${monthChars.length}人）</span>`;
+  }else{
+    head=`<span>🎂 本月生日（${cm}月）共${monthChars.length}人：</span>`;
+  }
+  el.innerHTML=`${head}<span class="bb-names">${names}</span><span class="bb-more">查看全部 →</span>`;
+  el.style.display='flex';
+}
+// 生日弹窗：12个月份宫格 + 当月角色列表
+let bdaySelMonth=0;
+function openBdayModal(month){
+  bdaySelMonth = month || (new Date().getMonth()+1);
+  renderBdayModal();
+  openModalTracked('bdayModal');
+}
+function renderBdayModal(){
+  const total=data.filter(c=>birthParts(c)).length;
+  const totalEl=document.getElementById('bdayTotal');
+  if(totalEl) totalEl.textContent=`（共${total}人有生日数据）`;
+  const counts=Array(13).fill(0);
+  data.forEach(c=>{const p=birthParts(c); if(p) counts[p.m]++;});
+  let html='<div class="bday-months">'+Array.from({length:12},(_,i)=>{
+    const mo=i+1;
+    return `<div class="bday-month-btn ${mo===bdaySelMonth?'active':''}" onclick="bdaySelMonth=${mo};renderBdayModal()">${mo}月<span class="mcnt">${counts[mo]}人</span></div>`;
+  }).join('')+'</div>';
+  const rows=data.filter(c=>{const p=birthParts(c);return p&&p.m===bdaySelMonth})
+    .sort((a,b)=>birthParts(a).d-birthParts(b).d);
+  if(!rows.length){
+    html+=`<div style="color:var(--text2);font-size:13px;padding:12px 0">${bdaySelMonth}月暂无有生日数据的角色</div>`;
+  }else{
+    html+='<div class="bday-rows">'+rows.map(c=>{
+      const img=c.images&&c.images.length?resolveImg(c.images[0]):'';
+      const today=isBdayToday(c);
+      const av=img?`<img src="${img}" loading="lazy" onerror="this.style.visibility='hidden'">`
+        :'<div style="width:40px;height:40px;border-radius:8px;background:var(--border);flex-shrink:0"></div>';
+      return `<div class="bday-row ${today?'today':''}" onclick="closeModal('bdayModal');openView(${c.id})">
+        ${av}
+        <div class="bi"><div class="bn">${c.name}${today?' <span class="bbadge">🎂 今天生日！</span>':''}</div><div class="bs">${c.source}</div></div>
+        <div class="bd">${fmtBirth(c)}</div>
+      </div>`;
+    }).join('')+'</div>';
+  }
+  document.getElementById('bdayModalBody').innerHTML=html;
+}
+
 function toast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg; t.style.display = 'block';
@@ -713,8 +846,13 @@ function render(reset){
     if(!matchSubType(c)) return false;
     if(activeTag && !(c.tags||[]).includes(activeTag)) return false;
     if(q){
-      const hay = (c.name+c.source+c.type+(c.tags||[]).join(',')+c.desc+(c.cv||'')+(c.story||'')).toLowerCase();
-      if(!hay.includes(q)) return false;
+      const bk = parseBirthQuery(q); // 生日关键词（8月 / 8-13 / 0813 / 8月13日）→ 纯 birth 匹配，避免 desc 噪音
+      if(bk){
+        if(!birthMatch(c,bk)) return false;
+      }else{
+        const hay = (c.name+c.source+c.type+(c.tags||[]).join(',')+c.desc+(c.cv||'')+(c.story||'')+' '+(c.birth||'')).toLowerCase();
+        if(!hay.includes(q)) return false;
+      }
     }
     if(fs && c.source!==fs) return false;
     if(ft && c.type!==ft) return false;
@@ -772,6 +910,7 @@ function render(reset){
   // 统计
   const starCount = data.filter(c=>c.star).length;
   const totalImgs = data.reduce((s,c)=>s+(c.images?c.images.length:0),0);
+  const bdayCount = data.filter(c=>birthParts(c)).length;
   document.getElementById('stats').textContent=`显示 ${filtered.length} / ${data.length} 人`;
   document.getElementById('countBadge').textContent=`${data.length}人 · ${totalImgs}图 · ⭐${starCount}`;
   document.getElementById('dash').innerHTML=
@@ -779,8 +918,10 @@ function render(reset){
      <span>类型 <b>${types.length}</b> 种</span>
      <span>收藏 <b>${starCount}</b></span>
      <span>图片 <b>${totalImgs}</b> 张</span>
+     <span>已知生日 <b>${bdayCount}</b> 个</span>
      <span style="margin-left:auto;color:var(--text2)">提示：<kbd>/</kbd> 搜索 · <kbd>Esc</kbd> 关闭 · <kbd>←</kbd><kbd>→</kbd> 翻图</span>`;
 
+  updateBdayBanner();
   renderGridPage();
 }
 
@@ -797,7 +938,9 @@ function cardHtml(c){
   const pc = c.images ? c.images.length : 0;
   const tags = (c.tags||[]).map(t=>`<span class="card-tag">${t}</span>`).join('');
   const missing = !img || !c.desc;
-  return `<div class="card ${missing?'missing':''}" onclick="openView(${c.id})">
+  const bToday = isBdayToday(c);
+  const bdayLine = birthParts(c) ? `<div class="card-bday ${bToday?'is-today':''}">🎂 ${fmtBirth(c)}${bToday?' · 今天生日！':''}</div>` : '';
+  return `<div class="card ${missing?'missing':''} ${bToday?'today-card':''}" onclick="openView(${c.id})">
     <div class="card-img-wrap">
       ${img?`<img class="card-img" src="${img}" loading="lazy" decoding="async" onerror="imgFail(this)">`:'<div class="img-fallback">无图</div>'}
       <button class="card-star ${c.star?'on':''}" data-star-id="${c.id}" onclick="event.stopPropagation();toggleStar(${c.id})">${c.star?'★':'☆'}</button>
@@ -806,6 +949,7 @@ function cardHtml(c){
     <div class="card-info">
       <div class="card-name">${c.name}</div>
       <div class="card-source">${c.source}</div>
+      ${bdayLine}
       <span class="card-type">${getRace(c)} · ${c.type}</span>
       <div class="card-tags">${tags}</div>
     </div>
@@ -1643,6 +1787,7 @@ document.addEventListener('keydown',e=>{
     if(document.getElementById('carousel').style.display==='flex'){stopCarousel();return}
     if(document.getElementById('fsView').style.display==='flex') closeFS();
     else if(document.getElementById('viewModal').style.display==='flex') closeModal('viewModal');
+    else if(document.getElementById('bdayModal').style.display==='flex') closeModal('bdayModal');
     else if(document.getElementById('editModal').style.display==='flex') closeModal('editModal');
   }
   if(e.key==='ArrowLeft' && document.getElementById('carousel').style.display==='flex') carouselNav(-1);

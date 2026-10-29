@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>美少女图鉴 · 生日功能预览</title>
+<style>
+  :root{
+    --bg:#0d1117;--bg2:#161b22;--border:#30363d;--text:#e6edf3;--text2:#8b949e;
+    --accent:#58a6ff;--accent2:#1f6feb;--accent3:#a371f7;--star:#e3b341;
+    --accent-soft:rgba(88,166,255,.15);
+    --grad-btn:linear-gradient(135deg,#1f6feb,#a371f7);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:radial-gradient(1100px 480px at 50% -80px,var(--accent-soft),transparent 70%),var(--bg);color:var(--text);font-family:'Microsoft YaHei UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;min-height:100vh;padding-bottom:60px}
+  .wrap{max-width:960px;margin:0 auto;padding:24px}
+  h1{font-size:22px;margin-bottom:6px}
+  .sub{color:var(--text2);font-size:13px;margin-bottom:24px}
+
+  .sec-title{display:flex;align-items:center;gap:10px;margin:32px 0 14px;font-size:16px}
+  .sec-title .badge{background:var(--grad-btn);color:#fff;font-size:11px;padding:2px 10px;border-radius:999px}
+
+  /* ===== 方案A：生日Tab → 月份列表 → 该月角色 ===== */
+  .plan-a-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:16px}
+  .race-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+  .race-tab{padding:6px 16px;border-radius:999px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;font-size:14px;font-weight:bold}
+  .race-tab.active{background:var(--grad-btn);color:#fff;border-color:transparent;box-shadow:0 2px 10px rgba(31,111,235,.35)}
+  .race-tab .count{font-size:11px;opacity:.75;margin-left:4px;font-weight:normal}
+
+  .months{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px}
+  .month-btn{padding:10px 6px;border-radius:12px;border:1px solid var(--border);background:var(--bg);color:var(--text2);cursor:pointer;font-size:13px;text-align:center;transition:all .15s}
+  .month-btn:hover{border-color:var(--accent);color:var(--accent)}
+  .month-btn.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:bold}
+  .month-btn .m-count{display:block;font-size:11px;opacity:.7;margin-top:2px}
+  .month-btn .cake{font-size:14px}
+
+  .bday-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+  .bday-item{display:flex;align-items:center;gap:10px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:10px 12px}
+  .bday-item .avatar{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#1f6feb44,#a371f744);display:flex;align-items:center;justify-content:center;font-size:18px}
+  .bday-item .info{flex:1;min-width:0}
+  .bday-item .name{font-size:14px;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bday-item .src{font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bday-item .date{font-size:12px;color:var(--star);font-weight:bold;white-space:nowrap}
+
+  /* ===== 方案B：本月生日横幅 + 月份筛选 ===== */
+  .banner{background:var(--grad-btn);border-radius:16px;padding:16px 20px;display:flex;align-items:center;gap:16px;margin-bottom:16px;color:#fff}
+  .banner .icon{font-size:32px}
+  .banner .info{flex:1}
+  .banner .info .t1{font-size:16px;font-weight:bold}
+  .banner .info .t2{font-size:12px;opacity:.85;margin-top:3px}
+  .banner .names{font-size:13px;opacity:.95}
+  .banner .go-btn{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);color:#fff;padding:6px 14px;border-radius:999px;font-size:12px;cursor:pointer;white-space:nowrap}
+
+  .month-strip{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:16px}
+  .month-strip .m{padding:5px 12px;border-radius:999px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);font-size:12px;cursor:pointer;white-space:nowrap}
+  .month-strip .m.active{background:var(--accent);border-color:var(--accent);color:#fff}
+  .month-strip .m.has-bday{color:var(--star);border-color:var(--star)}
+  .month-strip .m.active.has-bday{background:var(--star);border-color:var(--star);color:#1f2328}
+
+  .note{color:var(--text2);font-size:12px;margin-top:10px;line-height:1.7}
+  .tip{color:var(--accent);font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>美少女图鉴 · 生日功能效果预览</h1>
+  <div class="sub">两种展示方案，用真实角色生日数据演示（示例数据：约会大作战+现有角色）</div>
+
+  <div class="sec-title"><span class="badge">方案A</span> 顶部"生日"Tab → 12个月份 → 该月角色列表</div>
+  <div class="plan-a-card">
+    <div class="race-tabs">
+      <span class="race-tab">全部 233</span>
+      <span class="race-tab">龙族 72</span>
+      <span class="race-tab">机娘 69</span>
+      <span class="race-tab">吸血鬼 47</span>
+      <span class="race-tab">魔女 45</span>
+      <span class="race-tab active">生日 🎂<span class="count">42</span></span>
+    </div>
+    <div class="months">
+      <div class="month-btn"><span class="cake">🎂</span>1月<span class="m-count">2人</span></div>
+      <div class="month-btn active"><span class="cake">🎂</span>2月<span class="m-count">3人</span></div>
+      <div class="month-btn"><span class="cake">🎂</span>3月<span class="m-count">4人</span></div>
+      <div class="month-btn"><span class="cake">🎂</span>4月<span class="m-count">6人</span></div>
+      <div class="month-btn"><span class="cake">🎂</span>5月<span class="m-count">3人</span></div>
+      <div class="month-btn"><span class="cake">🎂</span>6月<span class="m-count">5人</span></div>
+      <div class="month-btn"><span class="cake">🎂</span>7月<span class="m-count">2人</span></div>
+      <div class="month-btn"><span class="cake">🎂</span>8月<span class="m-count">4人</span></div>
+      <div class="month-btn"><span class="cake">🎂</span>9月<span class="m-count">2人</span></div>
+      <div class="month-btn"><span class="cake">🎂</span>10月<span class="m-count">3人</span></div>
+      <div class="month-btn"><span class="cake">🎂</span>11月<span class="m-count">3人</span></div>
+      <div class="month-btn"><span class="cake">🎂</span>12月<span class="m-count">5人</span></div>
+    </div>
+    <div class="bday-list">
+      <div class="bday-item"><div class="avatar">🌸</div><div class="info"><div class="name">四糸乃</div><div class="src">约会大作战</div></div><div class="date">2月11日</div></div>
+      <div class="bday-item"><div class="avatar">🐰</div><div class="info"><div class="name">琳德</div><div class="src">公主连结</div></div><div class="date">2月5日</div></div>
+      <div class="bday-item"><div class="avatar">📖</div><div class="info"><div class="name">本条二亚</div><div class="src">约会大作战</div></div><div class="date">2月13日</div></div>
+    </div>
+    <div class="note">点月份切换，只显示<b>有官方生日</b>的角色（共42人有生日数据）。没有官方生日的角色不显示。</div>
+  </div>
+
+  <div class="sec-title"><span class="badge">方案B</span> 首页"本月生日"横幅 + 横向月份筛选条</div>
+  <div class="plan-a-card">
+    <div class="banner">
+      <div class="icon">🎂</div>
+      <div class="info">
+        <div class="t1">本月生日（10月）</div>
+        <div class="names">鸢一折纸(11.7) · 娜比(10.?) · … 共3人</div>
+        <div class="t2">点击查看全部 →</div>
+      </div>
+      <div class="go-btn">查看全部</div>
+    </div>
+    <div class="month-strip">
+      <span class="m has-bday">1月</span><span class="m has-bday">2月</span><span class="m has-bday">3月</span>
+      <span class="m has-bday">4月</span><span class="m has-bday">5月</span><span class="m has-bday">6月</span>
+      <span class="m has-bday">7月</span><span class="m has-bday">8月</span><span class="m has-bday">9月</span>
+      <span class="m has-bday active">10月</span><span class="m has-bday">11月</span><span class="m has-bday">12月</span>
+    </div>
+    <div class="bday-list">
+      <div class="bday-item"><div class="avatar">🍰</div><div class="info"><div class="name">鸢一折纸</div><div class="src">约会大作战</div></div><div class="date">11月7日</div></div>
+      <div class="bday-item"><div class="avatar">🐲</div><div class="info"><div class="name">真红</div><div class="src">异环</div></div><div class="date">8月13日</div></div>
+      <div class="bday-item"><div class="avatar">⚔️</div><div class="info"><div class="name">维尔姆</div><div class="src">公主连结</div></div><div class="date">4月17日</div></div>
+    </div>
+    <div class="note">打开页面自动显示<b>当前月份</b>的生日横幅；月份条上<b>金色</b>的月份表示当月有角色过生日。点月份条切换查看。</div>
+  </div>
+
+  <div class="tip">说明：以上为效果示意图，生日数据为示例（约会大作战角色生日是官方公开设定）。实际数据以交接后查证结果为准。</div>
+</div>
+</body>
+</html>

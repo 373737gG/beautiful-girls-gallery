@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>美少女图鉴 · 生日功能效果预览 v2</title>
+<style>
+  :root{
+    --bg:#0d1117;--bg2:#161b22;--border:#30363d;--text:#e6edf3;--text2:#8b949e;
+    --accent:#58a6ff;--accent2:#1f6feb;--accent3:#a371f7;--star:#e3b341;
+    --accent-soft:rgba(88,166,255,.15);
+    --grad-btn:linear-gradient(135deg,#1f6feb,#a371f7);
+    --header-bg:rgba(13,17,23,.85);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:radial-gradient(1100px 480px at 50% -80px,var(--accent-soft),transparent 70%),var(--bg);color:var(--text);font-family:'Microsoft YaHei UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;min-height:100vh}
+  .page-title{padding:20px 24px 0;font-size:20px}
+  .page-sub{color:var(--text2);font-size:12px;padding:4px 24px 0}
+
+  /* ===== 模拟图鉴真实页面 ===== */
+  .phone-frame{max-width:720px;margin:20px auto;border:1px solid var(--border);border-radius:20px;overflow:hidden;background:var(--bg)}
+  .header{background:var(--header-bg);backdrop-filter:blur(12px);padding:12px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:8px}
+  .header h1{font-size:17px;font-weight:700;background:linear-gradient(90deg,#58a6ff,#a371f7);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .header h1 span{color:var(--text2)!important;-webkit-text-fill-color:var(--text2);background:none;font-size:12px;font-weight:normal}
+  .header-btns{display:flex;gap:5px;flex-wrap:wrap}
+  .hbtn{padding:4px 9px;border-radius:999px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:11px;cursor:pointer;white-space:nowrap}
+  .hbtn.bday{background:var(--grad-btn);color:#fff;border-color:transparent}
+  .hbtn.bday-off{opacity:.6}
+
+  .stats{color:var(--text2);font-size:11px;padding:8px 20px;border-bottom:1px solid var(--border)}
+  .tabs{display:flex;flex-wrap:wrap;gap:5px;padding:10px 20px;border-bottom:1px solid var(--border);background:var(--bg2)}
+  .tab{padding:4px 11px;border-radius:999px;border:1px solid var(--border);background:var(--bg);color:var(--text2);font-size:11px;cursor:pointer}
+  .tab.active{background:var(--grad-btn);color:#fff;border-color:transparent}
+  .tab .cnt{font-size:10px;opacity:.75;margin-left:3px}
+
+  /* ===== 生日横幅：固定吸顶 + 可折叠 ===== */
+  .bday-bar{background:linear-gradient(135deg,rgba(31,111,235,.18),rgba(163,113,247,.14));border-bottom:1px solid rgba(88,166,255,.3);padding:8px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:90;flex-wrap:wrap}
+  .bday-bar .cake{font-size:18px;flex-shrink:0}
+  .bday-bar .txt{flex:1;min-width:0;font-size:12px;color:var(--text)}
+  .bday-bar .txt b{color:var(--star)}
+  .bday-bar .names{color:var(--text2);font-size:11px;margin-top:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .bday-bar .btns{display:flex;gap:6px;flex-shrink:0}
+  .bday-bar .more{padding:3px 10px;border-radius:999px;background:var(--accent);color:#fff;font-size:11px;cursor:pointer;border:none}
+  .bday-bar .fold{padding:3px 8px;border-radius:999px;background:transparent;border:1px solid var(--border);color:var(--text2);font-size:11px;cursor:pointer}
+
+  /* 折叠态：一条细横条 */
+  .bday-bar.collapsed{justify-content:center;padding:4px 20px;cursor:pointer}
+  .bday-bar.collapsed .txt{display:none}
+  .bday-bar.collapsed .btns{display:none}
+  .bday-bar.collapsed .fold-hint{font-size:11px;color:var(--text2)}
+  .bday-bar.collapsed .fold-hint .dot{color:var(--star)}
+
+  .toolbar{padding:10px 20px;display:flex;gap:6px}
+  .toolbar input{flex:1;min-width:120px;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:8px;font-size:12px}
+  .toolbar select{background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:6px 8px;border-radius:8px;font-size:11px}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;padding:10px 20px 24px}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;position:relative;transition:transform .15s}
+  .card:hover{transform:translateY(-2px);border-color:var(--accent)}
+  .card .img{height:140px;background:linear-gradient(160deg,#1f6feb33,#a371f733);display:flex;align-items:center;justify-content:center;font-size:34px}
+  .card .info{padding:8px 10px}
+  .card .name{font-size:12px;font-weight:bold}
+  .card .src{font-size:10px;color:var(--text2);margin-top:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .card .bday-tag{display:inline-flex;align-items:center;gap:3px;margin-top:4px;font-size:10px;color:var(--text2);background:var(--bg);border:1px solid var(--border);padding:1px 7px;border-radius:999px}
+  .card .bday-tag.today{color:#1f2328;background:var(--star);border-color:var(--star);font-weight:bold}
+  /* 生日当天：卡片角上蛋糕装饰 */
+  .card.today-card{border-color:var(--star);box-shadow:0 0 0 2px rgba(227,179,65,.35)}
+  .card.today-card .img::after{content:"🎂";position:absolute;top:8px;right:8px;font-size:22px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5))}
+
+  /* ===== 生日面板（点更多展开） ===== */
+  .bday-panel{max-width:720px;margin:0 auto 24px;background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:16px 20px;display:none}
+  .bday-panel.show{display:block}
+  .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .panel-head .t{font-size:14px;font-weight:bold}
+  .panel-head .t span{color:var(--text2);font-size:11px;font-weight:normal;margin-left:6px}
+  .months{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:14px}
+  .month-btn{padding:7px 4px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text2);font-size:11px;text-align:center;cursor:pointer}
+  .month-btn.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:bold}
+  .month-btn .cnt{display:block;font-size:10px;opacity:.7;margin-top:2px}
+  .bday-rows{display:flex;flex-direction:column;gap:8px}
+  .bday-row{display:flex;align-items:center;gap:10px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:8px 12px;cursor:pointer}
+  .bday-row .av{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,#1f6feb44,#a371f744);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+  .bday-row .info{flex:1;min-width:0}
+  .bday-row .nm{font-size:12px;font-weight:bold}
+  .bday-row .sr{font-size:10px;color:var(--text2)}
+  .bday-row .dt{font-size:11px;color:var(--star);font-weight:bold;white-space:nowrap}
+  .bday-row .go{font-size:10px;color:var(--accent)}
+
+  .annotate{max-width:720px;margin:0 auto 40px;padding:0 24px;color:var(--text2);font-size:12px;line-height:1.9}
+  .annotate b{color:var(--text)}
+</style>
+</head>
+<body>
+
+<div class="page-title">生日功能 · 效果预览 v2</div>
+<div class="page-sub">模拟图鉴真实界面：固定顶部横幅 + 可折叠 + 卡片生日标注 + 当天蛋糕</div>
+
+<!-- ============ 场景1：展开态 ============ -->
+<div class="phone-frame" style="margin-top:14px">
+  <div class="header">
+    <h1>✨ 美少女图鉴 <span>285人 · 821图</span></h1>
+    <div class="header-btns">
+      <span class="hbtn">＋添加</span>
+      <span class="hbtn">🎲随机</span>
+      <span class="hbtn">⏪轮播</span>
+      <span class="hbtn">❤收藏</span>
+      <span class="hbtn">👑选最爱</span>
+      <span class="hbtn bday">🎂生日</span>
+      <span class="hbtn">🎨主题</span>
+    </div>
+  </div>
+  <div class="stats">出处 146个 · 类型 14种 · 收藏 0 · 图片 821张</div>
+  <div class="tabs">
+    <span class="tab active">全部 <span class="cnt">285</span></span>
+    <span class="tab">龙族 <span class="cnt">71</span></span>
+    <span class="tab">吸血鬼 <span class="cnt">48</span></span>
+    <span class="tab">机娘 <span class="cnt">89</span></span>
+    <span class="tab">魔女 <span class="cnt">43</span></span>
+    <span class="tab">兽耳娘 <span class="cnt">17</span></span>
+    <span class="tab">精灵 <span class="cnt">16</span></span>
+  </div>
+  <!-- 生日横幅：固定吸顶、展开态 -->
+  <div class="bday-bar">
+    <span class="cake">🎂</span>
+    <div class="txt">
+      <span><b>本月生日（10月）</b> 共3人</span>
+      <div class="names">示例角色A(10.5) · 示例角色B(10.12) · 示例角色C(10.29) </div>
+    </div>
+    <div class="btns">
+      <span class="more">查看全部</span>
+      <span class="fold">收起 ▲</span>
+    </div>
+  </div>
+  <div class="toolbar">
+    <input placeholder="🔍 搜索名字 / 出处 / 类型 / 生日（如 8月、8-13、0813）">
+    <select><option>全部类型</option></select>
+  </div>
+  <div class="cards">
+    <div class="card"><div class="img">🌸</div><div class="info"><div class="name">示例角色A</div><div class="src">示例出处</div><div class="bday-tag">10月5日</div></div></div>
+    <div class="card"><div class="img">🐲</div><div class="info"><div class="name">示例角色B</div><div class="src">示例出处</div><div class="bday-tag">10月12日</div></div></div>
+    <div class="card today-card"><div class="img">🎂</div><div class="info"><div class="name">示例角色C</div><div class="src">示例出处</div><div class="bday-tag today">🎂 10月29日 · 今天生日</div></div></div>
+    <div class="card"><div class="img">🎀</div><div class="info"><div class="name">示例角色D</div><div class="src">示例出处</div><div class="bday-tag">6月8日</div></div></div>
+    <div class="card"><div class="img">⚔️</div><div class="info"><div class="name">示例角色E</div><div class="src">示例出处</div><div class="bday-tag">4月10日</div></div></div>
+    <div class="card"><div class="img">🦋</div><div class="info"><div class="name">示例角色F</div><div class="src">示例出处（无生日）</div></div></div>
+  </div>
+</div>
+<div class="annotate"><b>场景1 · 展开态：</b>横幅固定吸顶（不与header同时吸顶，实际会出现在header下方贴顶）；显示本月生日名单；卡片上有生日的角色带日期标签，<b>今天是10月29日</b>，示例角色C的卡片冒蛋糕+金色高亮。</div>
+
+<!-- ============ 场景2：折叠态 ============ -->
+<div class="phone-frame">
+  <div class="header">
+    <h1>✨ 美少女图鉴 <span>285人 · 821图</span></h1>
+    <div class="header-btns">
+      <span class="hbtn">＋添加</span>
+      <span class="hbtn">🎲随机</span>
+      <span class="hbtn">⏪轮播</span>
+      <span class="hbtn">❤收藏</span>
+      <span class="hbtn">👑选最爱</span>
+      <span class="hbtn bday">🎂生日</span>
+      <span class="hbtn">🎨主题</span>
+    </div>
+  </div>
+  <div class="stats">出处 146个 · 类型 14种 · 收藏 0 · 图片 821张</div>
+  <div class="tabs">
+    <span class="tab active">全部 <span class="cnt">285</span></span>
+    <span class="tab">龙族 <span class="cnt">71</span></span>
+    <span class="tab">吸血鬼 <span class="cnt">48</span></span>
+    <span class="tab">机娘 <span class="cnt">89</span></span>
+    <span class="tab">魔女 <span class="cnt">43</span></span>
+    <span class="tab">兽耳娘 <span class="cnt">17</span></span>
+    <span class="tab">精灵 <span class="cnt">16</span></span>
+  </div>
+  <!-- 生日横幅：折叠态 -->
+  <div class="bday-bar collapsed">
+    <span class="cake">🎂</span>
+    <span class="fold-hint">生日 · <span class="dot">本月3人</span> · 点击展开</span>
+  </div>
+  <div class="toolbar">
+    <input placeholder="🔍 搜索名字 / 出处 / 类型 / 生日">
+    <select><option>全部类型</option></select>
+  </div>
+  <div class="cards">
+    <div class="card"><div class="img">🌸</div><div class="info"><div class="name">示例角色A</div><div class="src">示例出处</div><div class="bday-tag">10月5日</div></div></div>
+    <div class="card"><div class="img">🐲</div><div class="info"><div class="name">示例角色B</div><div class="src">示例出处</div><div class="bday-tag">10月12日</div></div></div>
+    <div class="card today-card"><div class="img">🎂</div><div class="info"><div class="name">示例角色C</div><div class="src">示例出处</div><div class="bday-tag today">🎂 10月29日 · 今天生日</div></div></div>
+    <div class="card"><div class="img">🎀</div><div class="info"><div class="name">示例角色D</div><div class="src">示例出处</div><div class="bday-tag">6月8日</div></div></div>
+  </div>
+</div>
+<div class="annotate"><b>场景2 · 折叠态：</b>横幅收起成一条细横条（固定吸顶、只占一行），点一下展开；当天保持折叠状态（localStorage记忆）。顶部"🎂生日"按钮随时可重新展开。</div>
+
+<!-- ============ 场景3：生日面板 ============ -->
+<div class="bday-panel show">
+  <div class="panel-head">
+    <div class="t">🎂 生日面板 <span>共42人有生日数据</span></div>
+    <span class="fold" style="padding:3px 8px;border-radius:999px;background:transparent;border:1px solid var(--border);color:var(--text2);font-size:11px;cursor:pointer">× 关闭</span>
+  </div>
+  <div class="months">
+    <div class="month-btn">1月<span class="cnt">2人</span></div>
+    <div class="month-btn">2月<span class="cnt">3人</span></div>
+    <div class="month-btn">3月<span class="cnt">4人</span></div>
+    <div class="month-btn">4月<span class="cnt">6人</span></div>
+    <div class="month-btn">5月<span class="cnt">3人</span></div>
+    <div class="month-btn">6月<span class="cnt">5人</span></div>
+    <div class="month-btn">7月<span class="cnt">2人</span></div>
+    <div class="month-btn">8月<span class="cnt">4人</span></div>
+    <div class="month-btn">9月<span class="cnt">2人</span></div>
+    <div class="month-btn active">10月<span class="cnt">3人</span></div>
+    <div class="month-btn">11月<span class="cnt">3人</span></div>
+    <div class="month-btn">12月<span class="cnt">5人</span></div>
+  </div>
+  <div class="bday-rows">
+    <div class="bday-row"><div class="av">🌸</div><div class="info"><div class="nm">示例角色A</div><div class="sr">示例出处</div></div><div class="dt">10月5日</div><span class="go">查看 →</span></div>
+    <div class="bday-row"><div class="av">🐲</div><div class="info"><div class="nm">示例角色B</div><div class="sr">示例出处</div></div><div class="dt">10月12日</div><span class="go">查看 →</span></div>
+    <div class="bday-row" style="border-color:var(--star)"><div class="av">🎂</div><div class="info"><div class="nm">示例角色C · 今天生日！</div><div class="sr">示例出处</div></div><div class="dt">10月29日</div><span class="go">查看 →</span></div>
+  </div>
+</div>
+<div class="annotate"><b>场景3 · 生日面板：</b>点横幅"查看全部"或顶部"🎂生日"按钮打开；12个月份宫格+该月角色列表；点角色跳转详情；今天生日的角色金色高亮"今天生日！"。</div>
+
+</body>
+</html>
