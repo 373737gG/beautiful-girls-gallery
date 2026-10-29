@@ -668,7 +668,7 @@ const DEFAULT_DATA = [
 
 // ===== 状态 =====
 // 版本号：每次HTML更新后改一下，自动清掉浏览器旧数据
-const DATA_VERSION = '20261030-v48';
+const DATA_VERSION = '20261030-v49';
 if(localStorage.getItem('dg_version') !== DATA_VERSION){
   localStorage.removeItem('dg_data');
   localStorage.setItem('dg_version', DATA_VERSION);
@@ -1092,6 +1092,7 @@ function renderView(id){
     <div class="modal-meta">${getRace(c)} · ${c.source} · ${c.type}${c.cv?` · 🎙 ${c.cv}`:''}${n>1?` · ${n}张图`:''}
       <div class="card-tags" style="margin-top:6px">${tags}</div>
     </div>
+    ${birthParts(c)?`<div class="card-bday ${isBdayToday(c)?'is-today':''}">🎂 生日：${fmtBirth(c)}${isBdayToday(c)?' · 今天生日！':''}</div>`:''}
     <div class="modal-desc">${c.desc||'暂无设定'}</div>
     ${c.story?`<div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">
       <h4 style="color:var(--accent);font-size:14px;margin-bottom:8px">📖 相关剧情</h4>
