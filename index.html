@@ -200,10 +200,13 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-bottom-width:2px
 .music-vol{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)}
 .music-vol input{flex:1;accent-color:var(--accent)}
 /* ===== 生日功能 ===== */
-.bday-banner{margin:0 24px;padding:9px 16px;border:1px solid rgba(227,179,65,.45);border-radius:12px;background:linear-gradient(135deg,rgba(227,179,65,.14),rgba(88,166,255,.07));font-size:13px;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:10px;transition:border-color .15s}
-.bday-banner:hover{border-color:var(--star)}
-.bday-banner .bb-today{color:var(--star);font-weight:700}
-.bday-banner .bb-names{color:var(--text2);font-size:12px;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+/* 横幅：玻璃质感（深/浅背景均成立） */
+.bday-banner{margin:0 24px;padding:9px 16px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(255,255,255,.05);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 4px 16px rgba(0,0,0,.12),inset 0 1px 0 rgba(255,255,255,.15);font-size:13px;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:10px;transition:border-color .15s}
+.bday-banner:hover{border-color:rgba(255,255,255,.25)}
+.bday-banner .bb-head{color:#e6b64c;font-weight:600}
+.bday-banner .bb-today{color:#e6b64c;font-weight:700}
+.bday-banner .bb-names{font-size:12px;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.bday-banner .bb-names .sep{color:var(--text2)}
 .bday-banner .bb-more{margin-left:auto;font-size:12px;color:var(--accent);white-space:nowrap;flex-shrink:0}
 .card-bday{font-size:12px;color:var(--text2);margin-top:6px}
 .card-bday.is-today{color:var(--star);font-weight:700}
@@ -665,7 +668,7 @@ const DEFAULT_DATA = [
 
 // ===== 状态 =====
 // 版本号：每次HTML更新后改一下，自动清掉浏览器旧数据
-const DATA_VERSION = '20261029-v43';
+const DATA_VERSION = '20261029-v44';
 if(localStorage.getItem('dg_version') !== DATA_VERSION){
   localStorage.removeItem('dg_data');
   localStorage.setItem('dg_version', DATA_VERSION);
@@ -778,12 +781,17 @@ function updateBdayBanner(){
     .sort((a,b)=>birthParts(a).d-birthParts(b).d);
   if(!monthChars.length){ el.style.display='none'; el.innerHTML=''; return; }
   const todays=monthChars.filter(c=>isBdayToday(c));
-  const names=monthChars.map(c=>{const p=birthParts(c);return `${c.name}(${p.m}.${p.d})`}).join(' · ');
+  // 名单低饱和多彩：每人一色循环（名字+日期同色）
+  const BCOLORS=['#ff9ec4','#79b8ff','#b18cff','#8fd6a0','#ffc478'];
+  const names=monthChars.map((c,i)=>{
+    const p=birthParts(c);
+    return `<span style="color:${BCOLORS[i%BCOLORS.length]}">${c.name}(${p.m}.${p.d})</span>`;
+  }).join('<span class="sep"> · </span>');
   let head;
   if(todays.length){
     head=`<span class="bb-today">🎂 今天是${todays.map(c=>c.name).join('、')}的生日！</span>`;
   }else{
-    head=`<span>🎂 本月生日（${cm}月）共${monthChars.length}人：</span>`;
+    head=`<span class="bb-head">🎂 本月生日（${cm}月）共${monthChars.length}人：</span>`;
   }
   el.innerHTML=`${head}<span class="bb-names">${names}</span><span class="bb-more">查看全部 →</span>`;
   el.style.display='flex';
