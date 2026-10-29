@@ -257,7 +257,7 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-bottom-width:2px
 <div class="tag-bar" id="subTypeBar" style="display:none;padding-top:0"></div>
 
 <div class="toolbar">
-  <input type="text" id="searchBox" placeholder="搜索：角色名 / 出处 / 标签 / CV / 设定 / 剧情 / 生日（如 8月、8-13、0813）..." oninput="render()" onkeyup="if(event.key==='/')event.preventDefault()">
+  <input type="text" id="searchBox" placeholder="搜索: 角色名/出处/标签/CV/设定/剧情/生日" oninput="render()" onkeyup="if(event.key==='/')event.preventDefault()">
   <select id="filterSource" onchange="render()"><option value="">全部出处</option></select>
   <select id="filterType" onchange="render()"><option value="">全部类型</option></select>
   <select id="sortBy" onchange="render()">
@@ -405,7 +405,7 @@ const DEFAULT_DATA = [
 {id:25,name:"艾哈",source:"赤龙战役",type:"龙之巫女",cv:"泽城美雪",desc:"尼尔·卡姆伊革命军少女，负责王族忌布基护卫，联系者种族（与双眼损毁的巨大犬状魔物瓦尔共享生命），会合前过野兽般生活。",story:"2015年动画《Chaos Dragon 赤龙战役》角色。煌历3015年，岛国尼尔·卡姆伊的守护神赤龙暴走，三国混成调查队介入，国运随之激荡。隶属于独立派革命军的艾哈担任王族忌布基（伊吹）的护卫，作为「联系者」种族与双眼损毁的巨大犬状魔物瓦尔共享生命——与瓦尔同生共死的战斗方式，也是她全部的温柔所在。在赤龙暴走的乱世里，少女与魔兽的共生，是尼尔·卡姆伊最温柔的羁绊。",images:["龙族/艾哈_1.jpg","龙族/艾哈_3.jpg"],tags:["巫女"]},
 {id:26,name:"特娅",source:"龙鸣 DRAGONAUT",type:"龙娘",cv:"茅原实里",desc:"塔那托斯派遣的第二只原龙ALBUM（拉丁文=纯白），紫发紫眸少女，任务是带回地球龙蛋，使阵失去家人的元凶，心地善良与主角相爱，歌声能被阵听到（共鸣）",story:"龙鸣 DRAGONAUT的原龙ALBUM（拉丁语「纯白」）——塔那托斯派往地球的第二只原龙，紫发紫眸的少女。降临地球的事故夺走了阵的家人，怀负罪感的她与阵相遇、相爱，她的歌声只有阵能听见（共鸣）。在「带回龙蛋」的使命与对人类的爱之间挣扎，最终选择与阵共同面对龙的宿命，以自己的方式为这段跨越种族的羁绊找到了归宿。",images:["龙族/特娅_1.jpg","龙族/特娅_2.jpg"],tags:["原龙","共鸣"]},
 {id:27,name:"上杉绘梨衣",source:"龙族",type:"龙之巫女",desc:"蛇岐八家上杉家家主（对外），实际是赫尔佐格用上杉越基因制造的试管婴儿，拥有言灵审判（序列号111高危），号称蛇岐八家最强的剑，需死侍胎儿血清维持生命，与源稚生/源稚女同胞兄妹",story:"龙族。赫尔佐格以上杉越基因制造的试管婴儿，对外是蛇岐八家上杉家家主，实为八家饲养的「最强之剑」，需死侍胎儿血清维持生命，拥有高危言灵·审判（序列号111）。龙族3中与路明非相遇，游乐园的一天是她一生中唯一像普通少女的时光——Sakura铃铛、八音盒与樱花之约。最终在高天原事变中香消玉殒，留下的铃铛与未完成的约定，成为路明非此后所有暴走的起点。",images:["龙族/上杉绘梨衣_1.jpg","龙族/上杉绘梨衣_2.jpg","龙族/上杉绘梨衣_3.jpg","龙族/上杉绘梨衣_4.jpg","龙族/上杉绘梨衣_5.jpg","龙族/上杉绘梨衣_6.jpg","龙族/上杉绘梨衣_7.jpg","龙族/上杉绘梨衣_8.jpg"],tags:["混血","巫女"],race:"龙族",cv:""},
-{id:28,name:"夏弥",source:"龙族",type:"真龙",desc:"大地与山之王耶梦加得（Jormungandr），龙王芬里厄的妹妹，卡塞尔学院一年级新生，血统A级，言灵风王之瞳（序列号74），四大龙王之一，双生兄妹被对方吞食后进化为死神海拉",story:"龙族。大地与山之王耶梦加得的人间体，龙王芬里厄之妹，血统A级，以卡塞尔学院一年级新生的身份接近路明非。北京胡同里的同居日常是她短暂的「人类体验」，言灵·风王之瞳（序列号74）昭示龙王之力，真相揭开后一场龙王级大战；双生兄妹互吞的宿命让她最终进化为死神海拉——以最残酷的方式完成王之加冕。从北京的烟火气到龙王的王座，她走过的每一步都是宿命，也是选择。",images:["龙族/bfqj8hdh0hm7p15v1a1q37jxkgnw6zx.png","龙族/夏弥_3.jpg","龙族/夏弥_1.jpg","龙族/夏弥_2.jpg","龙族/9c16fdfaaf51f3deb48f9ad0f6b5e71f3a292df5d376_1_1.webp"],tags:["大地与山之王耶梦加得","女王"],race:"龙族",cv:""},
+{id:28,name:"夏弥",source:"龙族",type:"真龙",birth:"10-30",desc:"大地与山之王耶梦加得（Jormungandr），龙王芬里厄的妹妹，卡塞尔学院一年级新生，血统A级，言灵风王之瞳（序列号74），四大龙王之一，双生兄妹被对方吞食后进化为死神海拉",story:"龙族。大地与山之王耶梦加得的人间体，龙王芬里厄之妹，血统A级，以卡塞尔学院一年级新生的身份接近路明非。北京胡同里的同居日常是她短暂的「人类体验」，言灵·风王之瞳（序列号74）昭示龙王之力，真相揭开后一场龙王级大战；双生兄妹互吞的宿命让她最终进化为死神海拉——以最残酷的方式完成王之加冕。从北京的烟火气到龙王的王座，她走过的每一步都是宿命，也是选择。",images:["龙族/bfqj8hdh0hm7p15v1a1q37jxkgnw6zx.png","龙族/夏弥_3.jpg","龙族/夏弥_1.jpg","龙族/夏弥_2.jpg","龙族/9c16fdfaaf51f3deb48f9ad0f6b5e71f3a292df5d376_1_1.webp"],tags:["大地与山之王耶梦加得","女王"],race:"龙族",cv:""},
 {id:29,name:"艾拉",source:"复苏的魔女",type:"龙娘",desc:"即将迎来千岁生日的古老种族后裔，外表可爱小萝莉，在人类世界旅行上百年见多识广，平时人形态示人，真正生气时变回龙形态，UR级全能型，竞技场霸主，龙舞自带回血减伤",story:"复苏的魔女。奇洛拉世界蒙特尼亚公国的古老龙族后裔，即将迎来千岁生日。平时以人形小萝莉示人，在人类世界旅行上百年见多识广，唯独不愿在人前变回龙形态破坏形象。真正动怒时才展露真身：范围火焰吐息配合龙舞印记的每秒回血，攻守一体，让她成为竞技场里人称「全能UR霸主」的存在。千年将至的龙族后裔，把「保持可爱」当作比龙形态更重要的原则。",images:["龙族/艾拉_1.jpg"],tags:["萝莉"]},
 {id:30,name:"美露莘",source:"FGO",type:"龙娘",cv:"高野麻里佳",desc:"英国白龙阿尔比恩转生为妖精，摩根妖精骑士最强者，奥罗拉养女，帕西瓦尔养妹，可变形为飞行形态，第三技能变回原本模样释放龙之威压（对界宝具Hollowheart Albion）。妖精国不列颠圆桌骑士之一，获得泛人类史圆桌骑士·兰斯洛特灵基赐名的妖精骑士，在不列颠只是一种「龙」的妖精，被誉为妖精国最高贵、最美丽的妖精。",story:"FGO第二部六章。英国白龙阿尔比恩转生而成的妖精，摩根妖精骑士中最强者，称号妖精骑士兰斯洛特。奥罗拉养女、帕西瓦尔养妹，以甜美人形行走妖精国，可变形为飞行形态。第三技能解放真身时，天空将响起龙的威压——对界宝具「Hollowheart Albion」展开，便是她作为白龙的本来面目。妖精国崩坏的终局战中，她以白龙之姿划破长空。",images:["龙族/美露莘_1.jpg","龙族/美露莘_2.jpg","龙族/美露莘_3.jpg","龙族/美露莘_4.jpg","龙族/美露莘_5.jpg","龙族/メリュジーヌ满破.png","龙族/美露莘_6.jpg","龙族/美露莘_7.jpg","龙族/30_1.png","龙族/30_4.jpg"],tags:["妖精","FGO","阿尔比恩","白龙"],race:"龙族"},
 {id:31,name:"提亚马特（幼体）",source:"FGO",type:"真龙",cv:"悠木碧",desc:"古代美索不达米亚神话创世神，Beast II，身高160cm~7400万km²，天生没有死，只要地上还有活着的生命就不会消亡，少女体140cm/成人体160cm。",story:"FGO绝对魔兽战线的最终Boss，Beast II。美索不达米亚创世女神，因「被抛弃的神」之悲愿黑化，以黑泥之海覆盖生命——想让一切回归子宫，只因再没有生命需要母亲。天生没有死亡概念，只要地上还有活着的生命便不会消亡。少女体140cm与成人体160cm的极端反差，加上魔兽十一子的压制力，让第七特异点的最终决战成为人理史上最沉重的一页。最终被锁入虚空封印。",images:["龙族/提亚马特_2.jpg","龙族/提亚马特（幼体）_1.jpg","龙族/提亚马特（幼体）_2.jpg","龙族/31_2.jpg"],tags:["神","FGO"]},
@@ -665,7 +665,7 @@ const DEFAULT_DATA = [
 
 // ===== 状态 =====
 // 版本号：每次HTML更新后改一下，自动清掉浏览器旧数据
-const DATA_VERSION = '20261029-v42';
+const DATA_VERSION = '20261029-v43';
 if(localStorage.getItem('dg_version') !== DATA_VERSION){
   localStorage.removeItem('dg_data');
   localStorage.setItem('dg_version', DATA_VERSION);
@@ -768,20 +768,20 @@ function birthMatch(c, bk){
   if(bk.d===null) return p.m===bk.m;
   return p.m===bk.m && p.d===bk.d;
 }
-// 生日横幅：当月有生日角色才显示；今天有生日角色时置顶加粗
+// 生日横幅：只显示本月**未过**生日（日期>=今天，今天生日算未过）的角色；没有则不显示
 function updateBdayBanner(){
   const el=document.getElementById('bdayBanner');
   if(!el) return;
   const n=new Date();
-  const cm=n.getMonth()+1;
-  const monthChars=data.filter(c=>{const p=birthParts(c);return p&&p.m===cm})
+  const cm=n.getMonth()+1, cd=n.getDate();
+  const monthChars=data.filter(c=>{const p=birthParts(c);return p&&p.m===cm&&p.d>=cd})
     .sort((a,b)=>birthParts(a).d-birthParts(b).d);
   if(!monthChars.length){ el.style.display='none'; el.innerHTML=''; return; }
   const todays=monthChars.filter(c=>isBdayToday(c));
   const names=monthChars.map(c=>{const p=birthParts(c);return `${c.name}(${p.m}.${p.d})`}).join(' · ');
   let head;
   if(todays.length){
-    head=`<span class="bb-today">🎂 今天是${todays.map(c=>c.name).join('、')}的生日！</span><span>（本月共${monthChars.length}人）</span>`;
+    head=`<span class="bb-today">🎂 今天是${todays.map(c=>c.name).join('、')}的生日！</span>`;
   }else{
     head=`<span>🎂 本月生日（${cm}月）共${monthChars.length}人：</span>`;
   }
@@ -939,7 +939,7 @@ function cardHtml(c){
   const tags = (c.tags||[]).map(t=>`<span class="card-tag">${t}</span>`).join('');
   const missing = !img || !c.desc;
   const bToday = isBdayToday(c);
-  const bdayLine = birthParts(c) ? `<div class="card-bday ${bToday?'is-today':''}">🎂 ${fmtBirth(c)}${bToday?' · 今天生日！':''}</div>` : '';
+  const bdayLine = birthParts(c) ? `<div class="card-bday ${bToday?'is-today':''}">生日：${fmtBirth(c)}${bToday?' · 今天生日！🎂':''}</div>` : '';
   return `<div class="card ${missing?'missing':''} ${bToday?'today-card':''}" onclick="openView(${c.id})">
     <div class="card-img-wrap">
       ${img?`<img class="card-img" src="${img}" loading="lazy" decoding="async" onerror="imgFail(this)">`:'<div class="img-fallback">无图</div>'}
@@ -1571,6 +1571,7 @@ function openEdit(id){
       <input id="fTypeCustom" placeholder="输入新类型名称" style="margin-top:6px;display:${customType?'block':'none'};" value="${customType?esc(c.type):''}">
     </div>
     <div class="form-group"><label>CV（声优，可留空；多人用 / 分隔）</label><input id="fCv" value="${c?esc(c.cv||''):''}" placeholder="如：名冢佳织"></div>
+    <div class="form-group"><label>生日（可选，格式：10-30 或 10月30日）</label><input id="fBirth" value="${c?esc(c.birth||''):''}" placeholder="如：10-30"></div>
     <div class="form-group"><label>设定描述</label><textarea id="fDesc">${c?esc(c.desc||''):''}</textarea></div>
     <div class="form-group"><label>相关剧情（重要事件/名场面）</label><textarea id="fStory" style="min-height:80px">${c?esc(c.story||''):''}</textarea></div>
     <div class="form-group"><label>图片（逗号分隔文件名或URL）</label><input id="fImages" value="${c&&c.images?c.images.map(esc).join(','):''}"></div>
@@ -1598,13 +1599,26 @@ function saveEdit(id){
   const story=document.getElementById('fStory').value.trim();
   const images=document.getElementById('fImages').value.split(',').map(s=>s.trim()).filter(s=>s);
   const tags=document.getElementById('fTags').value.split(',').map(s=>s.trim()).filter(s=>s);
+  // 生日（可选）：支持 10-30 / 10月30日，归一化为 "M-D" 写入 birth；留空=清除
+  const birthRaw=document.getElementById('fBirth').value.trim();
+  let birth=null;
+  if(birthRaw){
+    const bm=birthRaw.match(/^(\d{1,2})-(\d{1,2})$/)||birthRaw.match(/^(\d{1,2})月(\d{1,2})日?$/);
+    if(!bm){alert('生日格式不对，请用 10-30 或 10月30日');return}
+    const mo=+bm[1], dd=+bm[2];
+    if(mo<1||mo>12||dd<1||dd>31){alert('生日数字超出范围（月1-12，日1-31）');return}
+    birth=`${mo}-${dd}`;
+  }
 
   if(id){
     const c=data.find(x=>x.id===id);
     Object.assign(c,{name,race,source,type,cv,desc,story,images,tags});
+    if(birth) c.birth=birth; else delete c.birth;
   } else {
     const newId=Math.max(...data.map(c=>c.id),0)+1;
-    data.push({id:newId,name,race,source,type,cv,desc,story,images,tags,star:false});
+    const nc={id:newId,name,race,source,type,cv,desc,story,images,tags,star:false};
+    if(birth) nc.birth=birth;
+    data.push(nc);
   }
   save(); closeModal('editModal'); closeModal('viewModal'); render(false);
   toast('已保存');
