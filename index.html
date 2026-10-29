@@ -203,7 +203,7 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-bottom-width:2px
 /* 横幅：玻璃质感（深/浅背景均成立） */
 .bday-banner{margin:0 24px;padding:9px 16px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(255,255,255,.05);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 4px 16px rgba(0,0,0,.12),inset 0 1px 0 rgba(255,255,255,.15);font-size:13px;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:10px;transition:border-color .15s}
 .bday-banner:hover{border-color:rgba(255,255,255,.25)}
-.bday-banner .bb-head{color:#e6b64c;font-weight:600}
+.bday-banner .bb-head{color:var(--accent);font-weight:400}
 .bday-banner .bb-today{color:#e6b64c;font-weight:700}
 .bday-banner .bb-names{font-size:12px;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .bday-banner .bb-names .sep{color:var(--text2)}
@@ -668,7 +668,7 @@ const DEFAULT_DATA = [
 
 // ===== 状态 =====
 // 版本号：每次HTML更新后改一下，自动清掉浏览器旧数据
-const DATA_VERSION = '20261029-v44';
+const DATA_VERSION = '20261029-v45';
 if(localStorage.getItem('dg_version') !== DATA_VERSION){
   localStorage.removeItem('dg_data');
   localStorage.setItem('dg_version', DATA_VERSION);
