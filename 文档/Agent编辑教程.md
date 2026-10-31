@@ -82,7 +82,7 @@ let data = JSON.parse(localStorage.getItem('dg_data') || 'null') || DEFAULT_DATA
 
 ## 五、改代码标准流程
 
-1. **备份**：index.html → `index.html.bak-YYYYMMDD-用途`。**约定：全项目只保留最新一份备份**（旧备份删除，git 历史里永久可查）。
+1. **备份（按需）**：重要改动前可选备份 index.html → `index.html.bak-YYYYMMDD-用途`；**任务完成、验证通过后清理无用备份**。git 历史永久可查，最终回滚靠 git，本地 .bak 不是必需。
 2. **摸底**：grep 确认锚点唯一；数据块每角色一行，不动 `DEFAULT_DATA=[` 到 `];` 之外的代码。
 3. **改完**：动数据必升 DATA_VERSION。
 4. **验证**：
