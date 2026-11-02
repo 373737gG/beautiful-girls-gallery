@@ -72,7 +72,33 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=DIR, **kwargs)
 
+    def _send_json(self, code, obj):
+        self.send_response(code)
+        self.send_header('Content-Type', 'application/json; charset=utf-8')
+        self.end_headers()
+        self.wfile.write(json.dumps(obj, ensure_ascii=False).encode('utf-8'))
+
     def do_GET(self):
+        # 标签分组配置（模块三）：页面加载时读取，有文件则覆盖内置默认分组
+        if self.path == '/tag-groups':
+            path = os.path.join(DIR, 'tag-groups.json')
+            if not os.path.isfile(path):
+                self._send_json(404, {'ok': False, 'error': '尚无分组配置文件（页面将使用内置默认分组）'})
+                return
+            try:
+                with open(path, 'r', encoding='utf-8') as f:
+                    cfg = json.load(f)
+                if not isinstance(cfg, dict):
+                    raise ValueError('配置必须是 JSON 对象（组名→标签数组）')
+                # 原样返回文件内容（浏览器只需要对象本身）
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json; charset=utf-8')
+                self.end_headers()
+                with open(path, 'rb') as f:
+                    self.wfile.write(f.read())
+            except Exception as e:
+                self._send_json(500, {'ok': False, 'error': f'分组配置文件损坏：{e}'})
+            return
         # 列出未被数据引用的孤儿图片，供前端「清理孤儿图」按钮使用
         if self.path == '/orphans':
             try:
@@ -105,6 +131,31 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         return super().do_GET()
 
     def do_POST(self):
+        # 保存标签分组配置（模块三）：校验合法 JSON、组名≤10字、标签总数≤200，超限拒绝
+        if self.path == '/tag-groups':
+            try:
+                content_length = int(self.headers.get('Content-Length', 0))
+                body = self.rfile.read(content_length)
+                cfg = json.loads(body.decode('utf-8'))
+                if not isinstance(cfg, dict):
+                    raise ValueError('配置必须是 JSON 对象（组名→标签数组）')
+                total = 0
+                for gname, tags in cfg.items():
+                    if not isinstance(gname, str) or not (1 <= len(gname) <= 10):
+                        raise ValueError(f'组名「{gname}」非法（需 1-10 个字）')
+                    if not isinstance(tags, list) or not all(isinstance(t, str) for t in tags):
+                        raise ValueError(f'组「{gname}」的标签必须是字符串数组')
+                    total += len(tags)
+                if total > 200:
+                    raise ValueError(f'标签总数 {total} 超过上限 200')
+                path = os.path.join(DIR, 'tag-groups.json')
+                with open(path, 'w', encoding='utf-8') as f:
+                    json.dump(cfg, f, ensure_ascii=False, indent=1)
+                self._send_json(200, {'ok': True})
+            except Exception as e:
+                self._send_json(400, {'ok': False, 'error': str(e)})
+            return
+
         # 自动保存数据到HTML文件
         if self.path == '/save':
             try:
